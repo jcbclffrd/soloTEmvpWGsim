@@ -120,6 +120,28 @@ HTTP request sent, awaiting response... 404 Not Found
 - `setup/00_setup_references.sh`
 
 ---
+
+## New Issues Found
+
+### 6. ⚠️ STAR Index Build (IN PROGRESS)
+
+**Task**: Build STAR genome index for T2T-CHM13v2.0
+
+**Requirements**:
+- 16 CPUs
+- 40GB RAM
+- ~30-40 minutes runtime
+- ~30GB disk space
+
+**Status**: 
+- ✅ Created sbatch wrapper: `setup/sbatch_01_build_star_index.sh`
+- ⚠️ Job 51395819 submitted and running
+- 📍 Output: `logs/build_star_51395819.{out,err}`
+- 📍 Index location: `references/STARsolo_index/`
+
+**Next Step**: Wait for completion, then install soloTE
+
+---
 ### 2. ✅ Interactive Compute Node Requirement (FIXED)
 
 **Issue**: Tutorial didn't mention that conda environment creation requires an interactive compute node. Creating environment on login node fails with exit code 137 (killed by system).
