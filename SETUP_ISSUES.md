@@ -142,6 +142,28 @@ HTTP request sent, awaiting response... 404 Not Found
 **Next Step**: Wait for completion, then install soloTE
 
 ---
+
+## Prepared for Next Steps
+
+### 7. ✅ SoloTE Installation Sbatch Wrapper (READY)
+
+**Task**: Install SoloTE from GitHub
+
+**Preparation**:
+- ✅ Created sbatch wrapper: `setup/sbatch_02_install_solote.sh`
+- 📋 Resources: 1 CPU, 4GB RAM, 10 minute time limit
+- 📋 Will clone SoloTE repo and verify Python dependencies
+
+**Usage** (after STAR index completes):
+```bash
+sbatch setup/sbatch_02_install_solote.sh
+```
+
+**Expected Output**:
+- Clone: `software/SoloTE/`
+- Runtime: ~1-2 minutes
+
+---
 ### 2. ✅ Interactive Compute Node Requirement (FIXED)
 
 **Issue**: Tutorial didn't mention that conda environment creation requires an interactive compute node. Creating environment on login node fails with exit code 137 (killed by system).
