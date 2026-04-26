@@ -153,23 +153,42 @@ HTTP request sent, awaiting response... 404 Not Found
 
 ## Prepared for Next Steps
 
-### 7. ✅ SoloTE Installation Sbatch Wrapper (READY)
+### 7. ❌ SoloTE Installation - PyPy/pysam Incompatibility (CRITICAL)
 
 **Task**: Install SoloTE from GitHub
 
-**Preparation**:
+**Status**:
 - ✅ Created sbatch wrapper: `setup/sbatch_02_install_solote.sh`
-- 📋 Resources: 1 CPU, 4GB RAM, 10 minute time limit
-- 📋 Will clone SoloTE repo and verify Python dependencies
+- ✅ Job 51396713 completed (22 seconds)
+- ✅ SoloTE cloned to `software/SoloTE/`
+- ✅ All SoloTE files present (SoloTE_pipeline.py, etc.)
+- ❌ **CRITICAL**: pysam import fails with binary incompatibility
 
-**Usage** (after STAR index completes):
-```bash
-sbatch setup/sbatch_02_install_solote.sh
+**Error**:
+```
+ValueError: array.array size changed, may indicate binary incompatibility. 
+Expected 72 from C header, got 24 from PyObject
 ```
 
-**Expected Output**:
-- Clone: `software/SoloTE/`
-- Runtime: ~1-2 minutes
+**Root Cause**:
+- Conda environment is using **PyPy 7.3.15** instead of CPython
+- pysam has binary incompatibility with PyPy
+- This breaks SoloTE pipeline which requires pysam
+
+**Impact**: 
+- ⚠️ Pipeline CANNOT run until pysam issue is resolved
+- All other tools work (Python, samtools, bedtools, STAR)
+- Only pysam is affected
+
+**Fix Required**:
+1. Force CPython (not PyPy) in environment.yml
+2. Add `python_impl=cpython` or similar constraint
+3. Recreate conda environment
+4. Verify pysam imports successfully
+
+**Priority**: CRITICAL - Blocks entire pipeline
+
+**Logs**: `logs/install_solote_51396713.{out,err}`
 
 ---
 ### 2. ✅ Interactive Compute Node Requirement (FIXED)
