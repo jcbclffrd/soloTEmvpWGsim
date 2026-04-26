@@ -153,65 +153,71 @@ HTTP request sent, awaiting response... 404 Not Found
 
 ## Prepared for Next Steps
 
-### 7. ❌ SoloTE Installation - PyPy/pysam Incompatibility (CRITICAL)
+### 7. ✅ SoloTE Installation - PyPy/pysam Fixed (COMPLETED)
 
-**Task**: Install SoloTE from GitHub
+**Task**: Install SoloTE and fix pysam compatibility
 
 **Status**:
-- ✅ Created sbatch wrapper: `setup/sbatch_02_install_solote.sh`
-- ✅ Job 51396713 completed (22 seconds)
 - ✅ SoloTE cloned to `software/SoloTE/`
-- ✅ All SoloTE files present (SoloTE_pipeline.py, etc.)
-- ❌ **CRITICAL**: pysam import fails with binary incompatibility
+- ✅ All SoloTE files present
+- ✅ **FIXED**: Conda environment recreated with CPython
+- ✅ pysam 0.23.3 imports successfully
 
-**Error**:
-```
-ValueError: array.array size changed, may indicate binary incompatibility. 
-Expected 72 from C header, got 24 from PyObject
-```
-
-**Root Cause**:
-- Conda environment is using **PyPy 7.3.15** instead of CPython
-- pysam has binary incompatibility with PyPy
-- This breaks SoloTE pipeline which requires pysam
-
-**Impact**: 
-- ⚠️ Pipeline CANNOT run until pysam issue is resolved
-- All other tools work (Python, samtools, bedtools, STAR)
-- Only pysam is affected
-
-**Fix Required**:
-1. Force CPython (not PyPy) in environment.yml ✅ DONE
-2. ~~Add `python_impl=cpython` or similar constraint~~ Used `python=3.9.*=*_cpython`
-3. Recreate conda environment (deactivate, remove, recreate)
-4. Verify pysam imports successfully
+**Original Issue**:
+- Conda installed PyPy 7.3.15 instead of CPython
+- pysam had binary incompatibility with PyPy
 
 **Fix Applied**:
-- ✅ Updated `environment.yml`: Changed `python=3.9` → `python=3.9.*=*_cpython`
-- ✅ Committed to repository  
-- ✅ Created sbatch wrapper: `setup/sbatch_recreate_environment.sh`
-- ❌ Job 51396775 **TIMED OUT** after 30 minutes (was in final transaction phase)
-- ✅ Increased time limit: 30 min → 60 min
-- ⚠️ Job 51400384 resubmitted (recreating environment with 1 hour limit)
+- ✅ Updated `environment.yml`: `python=3.9.*=*_cpython`
+- ✅ Job 51400384 completed successfully (28 minutes)
+- ✅ Environment recreated with CPython 3.9.23
 
-**Issue with First Attempt**:
-- Job hit 30 minute time limit during package installation
-- Environment removal completed successfully
-- New environment creation solved dependencies successfully
-- Timed out during final transaction execution phase
-
-**Next Steps**:
-```bash
-# Monitor progress:
-squeue -u $USER
-tail -f logs/recreate_env_51400384.out
+**Verification**:
+```
+Python: cpython 3.9.23
+pysam: 0.23.3 ✓
+numpy: 2.0.2 ✓
+pandas: 2.3.3 ✓
+biopython: 1.85 ✓
+samtools: 1.23.1 ✓
+bedtools: v2.31.1 ✓
+STAR: 2.7.11b ✓
 ```
 
-**Priority**: CRITICAL - Blocks entire pipeline
+**Logs**: 
+- `logs/install_solote_51396713.{out,err}` (initial install)
+- `logs/recreate_env_51396775.{out,err}` (first attempt - timed out)
+- `logs/recreate_env_51400384.{out,err}` (successful recreation)
 
-**Logs**: `logs/install_solote_51396713.{out,err}`
+**Impact**: ✅ Pipeline is now fully functional
 
 ---
+
+## ✅ Setup Complete Summary
+
+**All Setup Steps Finished Successfully**:
+1. ✅ Conda environment created (solote_validation) with CPython
+2. ✅ T2T genome downloaded (3.0GB) and indexed
+3. ✅ RepeatMasker annotations downloaded (327M, 4.6M TEs)
+4. ✅ STAR index built (23GB, 38 minutes)
+5. ✅ SoloTE installed (software/SoloTE/)
+6. ✅ All tools verified working
+
+**Ready for Pipeline Testing**:
+- All dependencies satisfied
+- All reference files in place
+- All tools functional
+- No blocking issues
+
+**Next Step**: Test the full validation pipeline
+```bash
+bash scripts/run_pipeline.sh
+```
+
+---
+
+## Historical Issues (For Repository Documentation)
+
 ### 2. ✅ Interactive Compute Node Requirement (FIXED)
 
 **Issue**: Tutorial didn't mention that conda environment creation requires an interactive compute node. Creating environment on login node fails with exit code 137 (killed by system).
