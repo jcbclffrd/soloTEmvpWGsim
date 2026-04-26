@@ -89,7 +89,37 @@ All initial setup issues have been identified and fixed. The repository now has 
 Next step: Wait for job 51394436 to complete, then test remaining setup steps.
 
 ---
+## New Issues Found
 
+### 5. ✅ RepeatMasker URL is Broken (FIXED)
+
+**Issue**: UCSC RepeatMasker URL returns 404 Not Found
+
+**Error**:
+```
+--2026-04-26 12:38:59--  https://hgdownload.soe.ucsc.edu/goldenPath/hs1/bigZips/hs1.rmsk.bed.gz
+HTTP request sent, awaiting response... 404 Not Found
+2026-04-26 12:39:00 ERROR 404: Not Found.
+```
+
+**Root Cause**: UCSC URL for hs1 RepeatMasker no longer exists
+
+**Fix Applied**:
+1. Updated URL to T2T Consortium AWS S3 source:
+   - Old: `https://hgdownload.soe.ucsc.edu/goldenPath/hs1/bigZips/hs1.rmsk.bed.gz`
+   - New: `https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/CHM13/assemblies/annotation/chm13v2.0_RepeatMasker_4.1.2p1.2022Apr14.bed`
+2. Removed decompression step (file is already in BED format, not gzipped)
+3. Updated gene annotation URL to GCA assembly (GCA_009914755.4)
+
+**Verification**:
+- ✅ RepeatMasker downloaded: 327M (5,590,282 features)
+- ✅ Filtered to TE-only: 340M (4,637,822 features)
+- ✅ Format validated: soloTE-compatible BED format
+
+**Files Modified**:
+- `setup/00_setup_references.sh`
+
+---
 ### 2. ✅ Interactive Compute Node Requirement (FIXED)
 
 **Issue**: Tutorial didn't mention that conda environment creation requires an interactive compute node. Creating environment on login node fails with exit code 137 (killed by system).

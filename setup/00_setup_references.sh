@@ -91,29 +91,22 @@ echo ""
 
 cd "$ANNOT_DIR"
 
-RMSK_URL="https://hgdownload.soe.ucsc.edu/goldenPath/hs1/bigZips/hs1.rmsk.bed.gz"
-RMSK_FILE="T2T-CHM13v2.0_RepeatMasker.bed.gz"
+RMSK_URL="https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/CHM13/assemblies/annotation/chm13v2.0_RepeatMasker_4.1.2p1.2022Apr14.bed"
 RMSK_BED="T2T-CHM13v2.0_RepeatMasker.bed"
 
 if [[ -f "$RMSK_BED" ]]; then
     echo "✓ RepeatMasker annotations already exist: $RMSK_BED"
     echo "  Skipping download"
 else
-    echo "Downloading RepeatMasker from UCSC..."
+    echo "Downloading RepeatMasker from T2T Consortium (AWS S3)..."
     echo "  Source: $RMSK_URL"
-    echo "  Target: $RMSK_FILE"
+    echo "  Target: $RMSK_BED"
     echo ""
     
-    wget -O "$RMSK_FILE" "$RMSK_URL"
+    wget -O "$RMSK_BED" "$RMSK_URL"
     
     echo ""
-    echo "✓ Download complete"
-    echo ""
-    
-    # Decompress
-    echo "Decompressing RepeatMasker annotations..."
-    gunzip "$RMSK_FILE"
-    echo "✓ RepeatMasker decompressed: $RMSK_BED"
+    echo "✓ Download complete: $RMSK_BED"
 fi
 
 echo ""
@@ -186,7 +179,7 @@ else
     echo "Note: This is for future gene contamination testing"
     echo ""
     
-    GENE_URL="https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/009/914/755/GCF_009914755.1_T2T-CHM13v2.0/GCF_009914755.1_T2T-CHM13v2.0_genomic.gff.gz"
+    GENE_URL="https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/009/914/755/GCA_009914755.4_T2T-CHM13v2.0/GCA_009914755.4_T2T-CHM13v2.0_genomic.gff3.gz"
     
     if wget -O "$GENE_GFF" "$GENE_URL" 2>/dev/null; then
         gunzip "$GENE_GFF"
