@@ -14,6 +14,7 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=40G
 #SBATCH --partition=free
+#SBATCH -A vswarup_lab
 
 echo "============================================"
 echo "SLURM Job: Build STAR Index"

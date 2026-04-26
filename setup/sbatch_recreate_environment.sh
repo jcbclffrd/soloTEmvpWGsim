@@ -15,6 +15,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
 #SBATCH --partition=free
+#SBATCH -A vswarup_lab
 
 echo "============================================"
 echo "SLURM Job: Recreate Conda Environment"

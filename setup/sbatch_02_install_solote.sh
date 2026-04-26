@@ -14,6 +14,7 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=4G
 #SBATCH --partition=free
+#SBATCH -A vswarup_lab
 
 echo "============================================"
 echo "SLURM Job: Install SoloTE"
