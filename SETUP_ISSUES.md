@@ -190,18 +190,21 @@ Expected 72 from C header, got 24 from PyObject
 - ✅ Updated `environment.yml`: Changed `python=3.9` → `python=3.9.*=*_cpython`
 - ✅ Committed to repository  
 - ✅ Created sbatch wrapper: `setup/sbatch_recreate_environment.sh`
-- ⚠️ Job 51396775 submitted (recreating environment)
+- ❌ Job 51396775 **TIMED OUT** after 30 minutes (was in final transaction phase)
+- ✅ Increased time limit: 30 min → 60 min
+- ⚠️ Job 51400384 resubmitted (recreating environment with 1 hour limit)
+
+**Issue with First Attempt**:
+- Job hit 30 minute time limit during package installation
+- Environment removal completed successfully
+- New environment creation solved dependencies successfully
+- Timed out during final transaction execution phase
 
 **Next Steps**:
 ```bash
-# Job will automatically:
-# 1. Remove old PyPy environment
-# 2. Create new CPython environment (~10-15 min)
-# 3. Verify pysam imports correctly
-
 # Monitor progress:
 squeue -u $USER
-tail -f logs/recreate_env_51396775.out
+tail -f logs/recreate_env_51400384.out
 ```
 
 **Priority**: CRITICAL - Blocks entire pipeline

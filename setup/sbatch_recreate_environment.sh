@@ -11,7 +11,7 @@
 #SBATCH --job-name=recreate_conda_env
 #SBATCH --output=logs/recreate_env_%j.out
 #SBATCH --error=logs/recreate_env_%j.err
-#SBATCH --time=00:30:00
+#SBATCH --time=01:00:00
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
 #SBATCH --partition=free
