@@ -181,10 +181,24 @@ Expected 72 from C header, got 24 from PyObject
 - Only pysam is affected
 
 **Fix Required**:
-1. Force CPython (not PyPy) in environment.yml
-2. Add `python_impl=cpython` or similar constraint
-3. Recreate conda environment
+1. Force CPython (not PyPy) in environment.yml ✅ DONE
+2. ~~Add `python_impl=cpython` or similar constraint~~ Used `python=3.9.*=*_cpython`
+3. Recreate conda environment (deactivate, remove, recreate)
 4. Verify pysam imports successfully
+
+**Fix Applied**:
+- Updated `environment.yml`: Changed `python=3.9` → `python=3.9.*=*_cpython`
+- Committed to repository
+
+**Next Steps**:
+```bash
+# On compute node (srun or sbatch)
+conda deactivate
+conda env remove -n solote_validation
+conda env create -f environment.yml
+conda activate solote_validation
+python3 -c "import pysam; print('pysam OK:', pysam.__version__)"
+```
 
 **Priority**: CRITICAL - Blocks entire pipeline
 

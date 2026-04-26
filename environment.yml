@@ -4,8 +4,8 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  # Python and core libraries
-  - python=3.9
+  # Python and core libraries (force CPython, NOT PyPy for pysam compatibility)
+  - python=3.9.*=*_cpython
   - pip
   
   # Scientific computing
