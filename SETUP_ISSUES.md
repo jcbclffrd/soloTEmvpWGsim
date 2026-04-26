@@ -187,17 +187,21 @@ Expected 72 from C header, got 24 from PyObject
 4. Verify pysam imports successfully
 
 **Fix Applied**:
-- Updated `environment.yml`: Changed `python=3.9` → `python=3.9.*=*_cpython`
-- Committed to repository
+- ✅ Updated `environment.yml`: Changed `python=3.9` → `python=3.9.*=*_cpython`
+- ✅ Committed to repository  
+- ✅ Created sbatch wrapper: `setup/sbatch_recreate_environment.sh`
+- ⚠️ Job 51396775 submitted (recreating environment)
 
 **Next Steps**:
 ```bash
-# On compute node (srun or sbatch)
-conda deactivate
-conda env remove -n solote_validation
-conda env create -f environment.yml
-conda activate solote_validation
-python3 -c "import pysam; print('pysam OK:', pysam.__version__)"
+# Job will automatically:
+# 1. Remove old PyPy environment
+# 2. Create new CPython environment (~10-15 min)
+# 3. Verify pysam imports correctly
+
+# Monitor progress:
+squeue -u $USER
+tail -f logs/recreate_env_51396775.out
 ```
 
 **Priority**: CRITICAL - Blocks entire pipeline
