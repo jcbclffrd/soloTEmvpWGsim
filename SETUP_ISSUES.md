@@ -36,6 +36,22 @@
 
 ## Issues Still Being Tested
 
+### 3. ✅ Conda Environment Creation (VERIFIED)
+
+**Status**: Successfully completed following the fixed instructions.
+
+**Verification**:
+- Environment created on compute node (no login node failures)
+- All required tools installed and working:
+  - Python 3.9.18 ✅
+  - R 4.5.3 ✅  
+  - STAR 2.7.11b ✅
+  - pysam 0.23.3, biopython 1.85 ✅
+
+**Time to complete**: ~10 minutes total on compute node with 4 CPUs
+
+---
+
 ### 2. ✅ Interactive Compute Node Requirement (FIXED)
 
 **Issue**: Tutorial didn't mention that conda environment creation requires an interactive compute node. Creating environment on login node fails with exit code 137 (killed by system).
