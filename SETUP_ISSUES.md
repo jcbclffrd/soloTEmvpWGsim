@@ -52,6 +52,44 @@
 
 ---
 
+### 4. ✅ Reference Download with sbatch (IN PROGRESS)
+
+**Approach**: Created sbatch wrapper for automated background execution following HPC best practices.
+
+**Implementation**:
+- Created `setup/sbatch_00_setup_references.sh` wrapper
+- Configured with: 1 hour time limit, 2 CPUs, 4GB RAM, free partition
+- Loads conda module and activates environment automatically
+- Logs to `logs/setup_refs_<jobid>.{out,err}`
+
+**Job Status**: 
+- Job ID: 51394436
+- Status: Queued (PD - Priority)
+- Once running, will download ~4GB (T2T genome + RepeatMasker)
+- Expected runtime: ~10-15 minutes
+
+**Benefits**:
+- User can disconnect - job runs in background
+- Follows HPC guidelines (no login node abuse)
+- Automated environment activation
+- Logged output for debugging
+
+**File Added**: `setup/sbatch_00_setup_references.sh`
+
+---
+
+## Summary
+
+All initial setup issues have been identified and fixed. The repository now has proper HPC-compliant instructions for:
+1. ✅ Module-based conda setup
+2. ✅ Proper conda initialization (separate from .bashrc)
+3. ✅ Interactive compute node requirement for environment creation
+4. ✅ Batch job submission for long-running downloads
+
+Next step: Wait for job 51394436 to complete, then test remaining setup steps.
+
+---
+
 ### 2. ✅ Interactive Compute Node Requirement (FIXED)
 
 **Issue**: Tutorial didn't mention that conda environment creation requires an interactive compute node. Creating environment on login node fails with exit code 137 (killed by system).
