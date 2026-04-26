@@ -23,7 +23,18 @@ This pipeline creates synthetic 10x Chromium single-cell RNA-seq data containing
 git clone <repo-url> soloTEmvpWGsim
 cd soloTEmvpWGsim
 
-# 2. Create conda environment
+# 2. Setup conda environment (HPC systems - first time only)
+module load miniconda3/25.11.1  # Or latest version available
+conda init bash
+# Move conda initialization lines from ~/.bashrc to ~/.mycondainit-25.11.1
+# (lines between ">>> conda initialize >>>" and "<<< conda initialize <<<")
+. ~/.mycondainit-25.11.1
+
+# Accept conda Terms of Service (one-time)
+conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+
+# Create environment
 conda env create -f environment.yml
 conda activate solote_validation
 
@@ -38,6 +49,8 @@ bash scripts/run_pipeline.sh
 # 5. Check results
 cat validation_report/validation_metrics.tsv
 ```
+
+**Note for HPC users**: See [TUTORIAL.md](TUTORIAL.md) for detailed conda setup instructions following HPC best practices.
 
 See [TUTORIAL.md](TUTORIAL.md) for detailed step-by-step instructions.
 

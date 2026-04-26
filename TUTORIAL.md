@@ -21,7 +21,7 @@ This tutorial walks you through the complete workflow from setup to validation r
 
 ### System Requirements
 
-- **Operating System**: Linux (tested on Ubuntu 20.04+, CentOS 7+)
+- **Operating System**: Linux (tested on Ubuntu 20.04+, CentOS 7+, Rocky Linux 8+)
 - **Memory**: 32 GB RAM minimum (for STAR index build)
 - **Disk Space**: 35 GB free space
   - T2T genome: ~3 GB
@@ -29,11 +29,22 @@ This tutorial walks you through the complete workflow from setup to validation r
   - Pipeline outputs: ~2 GB
 - **Internet**: For downloading references and software
 
+### Software Requirements
+
+**For HPC systems (e.g., RCIC UCI HPC3)**:
+- Access to environment modules system
+- Conda/miniconda available as a module (e.g., `module load miniconda3/25.11.1`)
+- No need to install conda yourself
+
+**For personal systems**:
+- Conda or Miniconda pre-installed ([installation guide](https://docs.conda.io/en/latest/miniconda.html))
+
 ### Required Knowledge
 
 - Basic command line usage (bash)
 - Familiarity with conda/bioconda
 - Understanding of single-cell RNA-seq concepts (helpful but not required)
+- **HPC users**: Familiarity with environment modules (`module load` commands)
 
 ---
 
@@ -59,8 +70,29 @@ You should see:
 
 ### Step 2: Create Conda Environment
 
+**For HPC Systems (RCIC UCI)**: Follow these steps to comply with HPC best practices:
+
 ```bash
-# Create environment (takes ~5 minutes)
+# Load conda module
+module load miniconda3/25.11.1  # Or latest available version
+
+# Initialize conda for bash (one-time setup)
+conda init bash
+
+# IMPORTANT: Move conda initialization lines from ~/.bashrc
+# Edit ~/.bashrc and move ALL lines between:
+#   ">>> conda initialize >>>" and "<<< conda initialize <<<"
+# to a new file: ~/.mycondainit-25.11.1
+# This prevents conda from interfering with other software modules.
+
+# Source the conda initialization file
+. ~/.mycondainit-25.11.1
+
+# Accept conda Terms of Service (required as of 2025+)
+conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+
+# Create environment (takes ~5-10 minutes)
 conda env create -f environment.yml
 
 # Activate environment
@@ -72,7 +104,20 @@ R --version        # Should show R 4.1+
 STAR --version     # Should show STAR 2.7.10a+
 ```
 
+**For future sessions**, you only need:
+```bash
+module load miniconda3/25.11.1
+. ~/.mycondainit-25.11.1
+conda activate solote_validation
+```
+
 **Note**: Always activate this environment before running any pipeline commands.
+
+**For non-HPC systems** (personal conda installation):
+```bash
+conda env create -f environment.yml
+conda activate solote_validation
+```
 
 ### Step 3: Download T2T Reference Genome and Annotations
 
