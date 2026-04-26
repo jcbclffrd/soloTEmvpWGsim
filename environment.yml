@@ -1,0 +1,48 @@
+name: solote_validation
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  # Python and core libraries
+  - python=3.9
+  - pip
+  
+  # Scientific computing
+  - numpy>=1.21
+  - pandas>=1.3
+  - scipy>=1.7
+  - pyyaml>=5.4
+  
+  # Bioinformatics tools
+  - samtools>=1.15
+  - bedtools>=2.30
+  - star>=2.7.10a
+  
+  # Read simulation
+  - wgsim  # From samtools package
+  
+  # R and packages for analysis/validation
+  - r-base>=4.1
+  - r-essentials
+  - r-tidyverse
+  - bioconductor-genomicranges
+  - bioconductor-rtracklayer
+  - bioconductor-biostrings
+  - r-ggplot2
+  - r-gridextra
+  - r-corrplot
+  
+  # Visualization
+  - matplotlib>=3.4
+  - seaborn>=0.11
+  
+  # Utilities
+  - curl
+  - wget
+  - git
+  
+  # Pip packages (if not available via conda)
+  - pip:
+    - pysam>=0.19
+    - biopython>=1.79

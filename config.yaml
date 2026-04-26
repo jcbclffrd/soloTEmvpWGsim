@@ -1,0 +1,174 @@
+# soloTEmvpWGsim Configuration
+# Edit paths and parameters as needed for your system
+
+# ==============================================================================
+# Reference Paths
+# These will be populated by running setup scripts
+# ==============================================================================
+references:
+  genome_fasta: references/genome/T2T-CHM13v2.0.fa
+  genome_fai: references/genome/T2T-CHM13v2.0.fa.fai
+  repeatmasker_bed: references/annotations/T2T-CHM13v2.0_RepeatMasker_SoloTE_filtered.bed
+  gene_gtf: references/annotations/T2T-CHM13v2.0_RefSeq_Curated_20231005.gff3
+  star_index: references/STARsolo_index/
+  
+# Software paths (populated by setup scripts)
+software:
+  solote_dir: software/SoloTE/
+
+# ==============================================================================
+# Simulation Parameters
+# ==============================================================================
+simulation:
+  # Number of synthetic cells to generate
+  n_cells: 100
+  
+  # Number of TE loci to include in ground truth
+  n_te_loci: 10
+  
+  # Sequencing depth
+  reads_per_cell: 50000  # Total reads per cell
+  
+  # Expression level (uniform for initial validation)
+  umi_per_locus: 100     # Target UMIs per TE locus per cell
+  
+  # Read parameters (10x Chromium v3)
+  read_length: 150       # bp
+  
+  # Cell barcode parameters (10x v3)
+  cb_length: 16          # Cell barcode length
+  umi_length: 12         # UMI length
+  
+  # Random seed for reproducibility
+  random_seed: 42
+
+# ==============================================================================
+# TE Selection Criteria (for 01_select_te_loci.R)
+# ==============================================================================
+te_selection:
+  # Target TE families (most expressed in real data)
+  families:
+    - Alu          # SINE
+    - L1           # LINE
+    - L2           # LINE
+    - MIR          # SINE
+    - ERVL-MaLR    # LTR
+    - hAT-Charlie  # DNA transposon
+  
+  # Selection criteria for well-separated TEs
+  min_distance_between_loci: 100000  # bp, avoid nearby TEs
+  min_te_length: 200                  # bp
+  max_te_length: 6000                 # bp
+  
+  # Chromosome filter (avoid unplaced/alt contigs)
+  chromosomes:
+    - chr1
+    - chr2
+    - chr3
+    - chr4
+    - chr5
+    - chr6
+    - chr7
+    - chr8
+    - chr9
+    - chr10
+    - chr11
+    - chr12
+    - chr13
+    - chr14
+    - chr15
+    - chr16
+    - chr17
+    - chr18
+    - chr19
+    - chr20
+    - chr21
+    - chr22
+    - chrX
+
+# ==============================================================================
+# Alignment Parameters (STARsolo)
+# Match production parameters for valid comparison
+# ==============================================================================
+alignment:
+  threads: 16
+  
+  # Multi-mapper handling (critical for TE quantification)
+  outFilterMultimapNmax: 100         # Keep reads mapping to 2-100 loci
+  winAnchorMultimapNmax: 100
+  outSAMmultNmax: 1                  # Output only best alignment
+  outMultimapperOrder: Random
+  runRNGseed: 777
+  
+  # Quality filtering
+  outFilterScoreMin: 30
+  
+  # 10x Chromium v3 chemistry
+  cb_start: 1
+  cb_len: 16
+  umi_start: 17
+  umi_len: 12
+  
+  # Memory limit (bytes)
+  limitBAMsortRAM: 30000000000
+
+# ==============================================================================
+# soloTE Parameters
+# ==============================================================================
+solote:
+  threads: 8
+  
+  # Output prefix
+  output_prefix: synthetic_validation
+
+# ==============================================================================
+# Output Directories
+# ==============================================================================
+output:
+  base_dir: synthetic_data/
+  transcriptome_dir: synthetic_data/transcriptome/
+  fastq_dir: synthetic_data/fastqs/
+  alignment_dir: synthetic_data/outputs/star_alignment/
+  solote_dir: synthetic_data/outputs/solote/
+  validation_dir: validation_report/
+
+# ==============================================================================
+# Validation Thresholds
+# ==============================================================================
+validation:
+  min_precision: 0.95    # Minimum acceptable precision
+  min_recall: 0.95       # Minimum acceptable recall
+  min_correlation: 0.90  # Minimum Pearson r for count accuracy
+
+# ==============================================================================
+# EXTENSION POINTS for Future Complexity
+# To enable future testing scenarios, modify these sections:
+# 
+# 1. Gene contamination testing:
+#    - Set include_genes: true
+#    - Uncomment gene_selection parameters
+# 
+# 2. Multi-mapper testing:
+#    - Set include_multimappers: true
+#    - Select young TE subfamilies with high sequence similarity
+# 
+# 3. Expression heterogeneity:
+#    - Change expression_model from 'uniform' to 'variable'
+#    - Set dropout_rate, expression_distribution
+# ==============================================================================
+extensions:
+  include_genes: false              # Add housekeeping genes
+  include_multimappers: false       # Include highly similar TEs
+  expression_model: uniform         # 'uniform' or 'variable'
+  
+  # Uncomment for future gene contamination testing:
+  # gene_selection:
+  #   n_genes: 5
+  #   genes: [GAPDH, ACTB, MALAT1, RPL13A, PTMA]
+  
+  # Uncomment for future expression heterogeneity:
+  # variable_expression:
+  #   dropout_rate: 0.1
+  #   expression_distribution: gamma
+  #   shape: 2.0
+  #   scale: 50.0
