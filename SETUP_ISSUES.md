@@ -36,6 +36,25 @@
 
 ## Issues Still Being Tested
 
-(Additional issues will be documented here as testing continues)
+### 2. ✅ Interactive Compute Node Requirement (FIXED)
+
+**Issue**: Tutorial didn't mention that conda environment creation requires an interactive compute node. Creating environment on login node fails with exit code 137 (killed by system).
+
+**Original Problem**:
+- Tutorial went straight to `conda env create` without mentioning `srun`
+- Environment creation failed on login node due to resource limits
+- No warning about needing compute node
+
+**Fix Applied**:
+- Updated TUTORIAL.md Step 2 to add `srun` as STEP 1 (with warning)
+- Updated README Quick Start to include `srun` command
+- Added clear explanation that this step is REQUIRED and cannot be skipped
+- Added note that queue wait is normal behavior
+- Updated "For future sessions" section to include `srun`
+
+**Files Modified**:
+- `README.md`: Updated Quick Start section
+- `TUTORIAL.md`: Updated Step 2 with prominent srun requirement
+- `SETUP_ISSUES.md`: This file
 
 ---

@@ -24,6 +24,10 @@ git clone <repo-url> soloTEmvpWGsim
 cd soloTEmvpWGsim
 
 # 2. Setup conda environment (HPC systems - first time only)
+# IMPORTANT: Get interactive compute node first (required on HPC)
+srun -c 4 -p free --pty /bin/bash -i
+
+# Then setup conda (wait for node allocation first)
 module load miniconda3/25.11.1  # Or latest version available
 conda init bash
 # Move conda initialization lines from ~/.bashrc to ~/.mycondainit-25.11.1

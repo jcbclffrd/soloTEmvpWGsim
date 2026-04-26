@@ -73,32 +73,44 @@ You should see:
 **For HPC Systems (RCIC UCI)**: Follow these steps to comply with HPC best practices:
 
 ```bash
-# Load conda module
+# STEP 1: Get an interactive compute node (REQUIRED - do not skip!)
+# Conda environment creation uses significant CPU/memory and will fail on login nodes
+srun -c 4 -p free --pty /bin/bash -i
+
+# Wait for node allocation (may take a few minutes if queue is busy)
+# Once allocated, your prompt will change to show compute node (e.g., hpc3-xx-yy)
+
+# STEP 2: Load conda module (on the compute node)
 module load miniconda3/25.11.1  # Or latest available version
 
-# Initialize conda for bash (one-time setup)
+# STEP 3: Initialize conda for bash (one-time setup only)
 conda init bash
 
-# IMPORTANT: Move conda initialization lines from ~/.bashrc
-# Edit ~/.bashrc and move ALL lines between:
+# STEP 4: Move conda initialization lines from ~/.bashrc
+# IMPORTANT: Edit ~/.bashrc and move ALL lines between:
 #   ">>> conda initialize >>>" and "<<< conda initialize <<<"
 # to a new file: ~/.mycondainit-25.11.1
 # This prevents conda from interfering with other software modules.
+#
+# Example commands to do this:
+# 1. Backup .bashrc:  cp ~/.bashrc ~/.bashrc.backup
+# 2. Create the init file with the conda lines (between >>> and <<<)
+# 3. Remove those lines from .bashrc
 
-# Source the conda initialization file
+# STEP 5: Source the conda initialization file
 . ~/.mycondainit-25.11.1
 
-# Accept conda Terms of Service (required as of 2025+)
+# STEP 6: Accept conda Terms of Service (required as of 2025+)
 conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
 conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 
-# Create environment (takes ~5-10 minutes)
+# STEP 7: Create environment (takes ~5-10 minutes)
 conda env create -f environment.yml
 
-# Activate environment
+# STEP 8: Activate environment
 conda activate solote_validation
 
-# Verify installation
+# STEP 9: Verify installation
 python --version   # Should show Python 3.9+
 R --version        # Should show R 4.1+
 STAR --version     # Should show STAR 2.7.10a+
@@ -106,6 +118,10 @@ STAR --version     # Should show STAR 2.7.10a+
 
 **For future sessions**, you only need:
 ```bash
+# Get interactive node first
+srun -c 4 -p free --pty /bin/bash -i
+
+# Then activate environment
 module load miniconda3/25.11.1
 . ~/.mycondainit-25.11.1
 conda activate solote_validation
