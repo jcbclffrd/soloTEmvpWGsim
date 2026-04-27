@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=redownload_genome
-#SBATCH --output=../logs/redownload_genome_%j.out
-#SBATCH --error=../logs/redownload_genome_%j.err
+#SBATCH --output=logs/redownload_genome_%j.out
+#SBATCH --error=logs/redownload_genome_%j.err
 #SBATCH --time=00:30:00
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=4G
