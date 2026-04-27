@@ -38,7 +38,7 @@ fi
 # Load config
 SOLOTE_DIR=$(grep "solote_dir:" config.yaml | awk '{print $2}')
 REPEATMASKER_BED=$(grep "repeatmasker_bed:" config.yaml | awk '{print $2}')
-THREADS=$(grep "threads:" config.yaml | grep -A1 "solote:" | tail -1 | awk '{print $2}')
+THREADS=$(grep -A 20 "^solote:" config.yaml | grep "threads:" | awk '{print $2}')
 OUTPUT_PREFIX=$(grep "output_prefix:" config.yaml | awk '{print $2}')
 
 # Paths

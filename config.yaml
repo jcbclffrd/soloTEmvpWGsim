@@ -129,7 +129,7 @@ output:
   transcriptome_dir: synthetic_data/transcriptome/
   fastq_dir: synthetic_data/fastqs/
   alignment_dir: synthetic_data/outputs/star_alignment/
-  solote_dir: synthetic_data/outputs/solote/
+  solote_output_dir: synthetic_data/outputs/solote/
   validation_dir: validation_report/
 
 # ==============================================================================

@@ -48,6 +48,7 @@ echo ""
 GENOME_DIR="$REPO_ROOT/references/genome"
 INDEX_DIR="$REPO_ROOT/references/STARsolo_index"
 GENOME_FA="$GENOME_DIR/T2T-CHM13v2.0.fa"
+GTF_FILE="$REPO_ROOT/references/annotations/selected_te_loci.gtf"
 
 # Validate genome exists
 if [[ ! -f "$GENOME_FA" ]]; then
@@ -95,6 +96,7 @@ echo "============================================"
 echo ""
 echo "Configuration:"
 echo "  Genome: $GENOME_FA"
+echo "  GTF annotations: $GTF_FILE"
 echo "  Output: $INDEX_DIR"
 echo "  Threads: ${THREADS:-16}"
 echo ""
@@ -105,12 +107,20 @@ echo ""
 # Determine number of threads (use config or default)
 THREADS=${THREADS:-16}
 
+# Check if GTF exists
+if [[ ! -f "$GTF_FILE" ]]; then
+    echo "ERROR: GTF file not found: $GTF_FILE"
+    echo "Creating GTF from selected TE loci..."
+    bash "$REPO_ROOT/scripts/convert_te_to_gtf.sh"
+fi
+
 # Build index
 STAR \
     --runMode genomeGenerate \
     --runThreadN "$THREADS" \
     --genomeDir "$INDEX_DIR" \
     --genomeFastaFiles "$GENOME_FA" \
+    --sjdbGTFfile "$GTF_FILE" \
     --genomeSAindexNbases 14
 
 echo ""

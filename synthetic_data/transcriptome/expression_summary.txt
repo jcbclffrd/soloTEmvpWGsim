@@ -1,0 +1,15 @@
+Synthetic Expression Profile Summary
+====================================
+
+Number of cells: 100
+Number of TE loci: 10
+Expression model: uniform
+UMIs per locus per cell: 100
+Total UMIs per cell: 1000
+Total UMIs across all cells: 100000
+
+TE families represented:
+  Alu: 5 loci
+  L2: 1 loci
+  L1: 3 loci
+  hAT-Charlie: 1 loci

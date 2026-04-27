@@ -37,7 +37,7 @@ echo ""
 # Load config
 STAR_INDEX=$(grep "star_index:" config.yaml | awk '{print $2}')
 # Get threads from alignment section
-THREADS=$(awk '/^alignment:/,/^[a-z]/ {if ($1 == "threads:") print $2}' config.yaml)
+THREADS=$(grep -A 20 "^alignment:" config.yaml | grep "threads:" | awk '{print $2}')
 CB_START=$(grep "cb_start:" config.yaml | awk '{print $2}')
 CB_LEN=$(grep "cb_len:" config.yaml | awk '{print $2}')
 UMI_START=$(grep "umi_start:" config.yaml | awk '{print $2}')
@@ -109,7 +109,7 @@ STAR \
     --soloUMIstart "$UMI_START" \
     --soloUMIlen "$UMI_LEN" \
     --soloBarcodeReadLength 0 \
-    --soloFeatures Gene GeneFull \
+    --soloFeatures Gene \
     --soloCBmatchWLtype 1MM_multi_Nbase_pseudocounts \
     --soloUMIfiltering MultiGeneUMI_CR \
     --soloUMIdedup 1MM_CR \

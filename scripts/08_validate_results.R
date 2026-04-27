@@ -101,8 +101,18 @@ message("")
 # ==============================================================================
 message("Matching detected loci to ground truth...")
 
-# Extract genomic coordinates from soloTE feature names
-# soloTE format varies, try to parse chr:start-end
+# First, check for exact matches by locus_id (e.g., TE_001, TE_002)
+ground_truth_ids <- ground_truth$locus_id
+exact_matches <- tibble(
+  feature_name = features,
+  locus_id = features
+) %>%
+  filter(locus_id %in% ground_truth_ids) %>%
+  left_join(ground_truth %>% select(locus_id, chr, start, end), by = "locus_id")
+
+message(sprintf("  Exact matches by locus_id: %d", nrow(exact_matches)))
+
+# Then parse coordinates for remaining loci
 parse_locus <- function(feature_name) {
   # Try different formats
   # Format 1: chr1:12345-12678
@@ -121,12 +131,12 @@ parse_locus <- function(feature_name) {
 }
 
 detected_loci <- tibble(feature_name = features) %>%
+  filter(!feature_name %in% exact_matches$feature_name) %>%  # Skip exact matches
   mutate(parsed = map(feature_name, parse_locus)) %>%
   unnest(parsed)
 
-message(sprintf("  Parsed %d soloTE features", nrow(detected_loci)))
+message(sprintf("  Parsed %d remaining soloTE features", nrow(detected_loci)))
 message(sprintf("  Successfully parsed coordinates: %d", sum(!is.na(detected_loci$chr))))
-message("")
 
 # Match to ground truth by coordinates (allow small differences due to alignment)
 match_tolerance <- 10  # bp
@@ -134,7 +144,7 @@ match_tolerance <- 10  # bp
 ground_truth_coords <- ground_truth %>%
   select(locus_id, chr, start, end)
 
-matched_loci <- detected_loci %>%
+coordinate_matches <- detected_loci %>%
   filter(!is.na(chr)) %>%
   left_join(
     ground_truth_coords,
@@ -145,9 +155,17 @@ matched_loci <- detected_loci %>%
     abs(start_detected - start_truth) <= match_tolerance,
     abs(end_detected - end_truth) <= match_tolerance
   ) %>%
-  select(feature_name, locus_id, chr, start_detected, end_detected, start_truth, end_truth)
+  select(feature_name, locus_id, chr, start = start_detected, end = end_detected)
 
-message(sprintf("  Matched detected loci to ground truth: %d", nrow(matched_loci)))
+message(sprintf("  Coordinate-based matches: %d", nrow(coordinate_matches)))
+
+# Combine all matches
+matched_loci <- bind_rows(
+  exact_matches %>% select(feature_name, locus_id, chr, start, end),
+  coordinate_matches
+)
+
+message(sprintf("  Total matched loci to ground truth: %d", nrow(matched_loci)))
 message("")
 
 # ==============================================================================
@@ -159,7 +177,7 @@ message("")
 # Precision: TP / (TP + FP)
 # TP = detected loci that match ground truth
 # FP = detected loci that don't match ground truth
-n_detected <- nrow(detected_loci)
+n_detected <- length(features)
 n_true_positive <- nrow(matched_loci)
 n_false_positive <- n_detected - n_true_positive
 
