@@ -214,7 +214,7 @@ message("  Length statistics:")
 message(sprintf("    Min: %d bp", min(ground_truth$length)))
 message(sprintf("    Max: %d bp", max(ground_truth$length)))
 message(sprintf("    Mean: %.0f bp", mean(ground_truth$length)))
-message(sprintf("    Median: %d bp", median(ground_truth$length)))
+message(sprintf("    Median: %.0f bp", median(ground_truth$length)))
 message("")
 
 # ==============================================================================

@@ -240,3 +240,32 @@ bash scripts/run_pipeline.sh
 - `SETUP_ISSUES.md`: This file
 
 ---
+
+### 8. ✅ R sprintf Format Error in Step 1 (FIXED)
+
+**Issue**: Pipeline stopped at step 1 with R sprintf formatting error
+
+**Error**:
+```
+Error in sprintf("    Median: %d bp", median(ground_truth$length)) : 
+  invalid format '%d'; use format %f, %e, %g or %a for numeric objects
+Calls: message -> sprintf
+Execution halted
+```
+
+**Root Cause**: 
+- `median()` returns numeric (double) type in R
+- `sprintf` format `%d` expects integer type
+- Mean on previous line used `%.0f` correctly
+
+**Fix Applied**:
+- Changed line 218 in `scripts/01_select_te_loci.R`
+- Old: `sprintf("    Median: %d bp", median(ground_truth$length))`
+- New: `sprintf("    Median: %.0f bp", median(ground_truth$length))`
+
+**Verification**: Ready to rerun pipeline
+
+**Files Modified**:
+- `scripts/01_select_te_loci.R`
+
+---
