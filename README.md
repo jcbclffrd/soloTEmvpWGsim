@@ -2,7 +2,32 @@
 
 **Synthetic Validation Pipeline for soloTE Locus-Level TE Quantification**
 
-A standalone pipeline for validating soloTE's accuracy using synthetic single-cell RNA-seq data with known ground truth transposable element (TE) expression.
+A standalone, HPC-ready pipeline for validating soloTE's accuracy using synthetic single-cell RNA-seq data with known ground truth transposable element (TE) expression.
+
+---
+
+## 🚀 Quick Start (HPC)
+
+**Designed for SLURM-based HPC systems like UCI HPC3**
+
+```bash
+# 1. Clone repository
+git clone https://github.com/jcbclffrd/soloTEmvpWGsim.git
+cd soloTEmvpWGsim
+
+# 2. Run automated setup
+bash hpc_quick_start.sh
+
+# OR manually configure and submit jobs
+bash configure_hpc_account.sh
+cd setup && sbatch sbatch_00_setup_references.sh
+```
+
+**📖 Complete Guide**: See [HPC_SETUP.md](HPC_SETUP.md) for detailed HPC instructions
+
+**📊 Pipeline Results**: See [PIPELINE_STATUS.md](PIPELINE_STATUS.md) for validation findings
+
+---
 
 ## Overview
 
@@ -10,13 +35,32 @@ This pipeline creates synthetic 10x Chromium single-cell RNA-seq data containing
 
 ### Key Features
 
+- **HPC-Ready**: SLURM batch scripts with job dependencies included
+- **Reproducible**: Clone and run - no hardcoded paths
 - **Standalone**: Complete setup scripts download all references and build indices
 - **Configurable**: All parameters controlled through `config.yaml`
 - **Ground truth validation**: Known TE expression enables precision/recall metrics
-- **Extension points**: Documented modifications for future complexity testing
-- **Portable**: No hardcoded paths, works after cloning
+- **Documented**: Comprehensive guides for HPC setup and results interpretation
 
-### Quick Start
+### Repository Contents
+
+| File/Directory | Purpose |
+|----------------|---------|
+| `hpc_quick_start.sh` | 🚀 Automated HPC setup wizard |
+| `configure_hpc_account.sh` | Configure SLURM account name |
+| `HPC_SETUP.md` | 📖 Complete HPC setup guide |
+| `PIPELINE_STATUS.md` | 📊 Validation results and findings |
+| `sbatch_run_pipeline.sh` | Main pipeline SLURM script |
+| `setup/sbatch_*.sh` | Setup job scripts (references, index, software) |
+| `submit_pipeline_after_index.sh` | Chain jobs with dependencies |
+| `scripts/` | Pipeline step scripts (R, Python, bash) |
+| `config.yaml` | Configuration parameters |
+
+---
+
+## Quick Start (Interactive/Local)
+
+For non-HPC or interactive use:
 
 ```bash
 # 1. Clone repository

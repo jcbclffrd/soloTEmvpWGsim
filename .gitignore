@@ -26,9 +26,18 @@ software/*
 # ==============================================================================
 synthetic_data/transcriptome/*.fa
 synthetic_data/transcriptome/*.fai
+synthetic_data/transcriptome/*.original
 synthetic_data/fastqs/*.fastq
 synthetic_data/fastqs/*.fastq.gz
 synthetic_data/outputs/
+
+# Keep ground truth and small metadata files
+!ground_truth/*.tsv
+!ground_truth/*.bed
+!synthetic_data/transcriptome/*.txt
+!synthetic_data/transcriptome/cell_barcodes.txt
+!synthetic_data/transcriptome/expression_profile.tsv
+!synthetic_data/transcriptome/expression_summary.txt
 
 # ==============================================================================
 # Validation Outputs
@@ -36,11 +45,10 @@ synthetic_data/outputs/
 validation_report/*.pdf
 validation_report/*.png
 validation_report/*.html
-validation_report/*.csv
-validation_report/*.tsv
 
-# Keep template/example files
+# Keep small text outputs that show results
 !validation_report/README.md
+!validation_report/*.tsv
 
 # ==============================================================================
 # Python

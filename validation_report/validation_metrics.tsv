@@ -1,0 +1,17 @@
+metric	value
+precision	0.004051863857374392
+recall	1
+f1_score	0.008071025020177564
+pearson_r	NA
+spearman_r	NA
+mae	2259.097
+mpe	2236.7297029702972
+n_ground_truth	10
+n_detected	2468
+n_true_positive	10
+n_false_positive	2458
+n_false_negative	0
+pass_precision	0
+pass_recall	1
+pass_correlation	0
+overall_pass	0
