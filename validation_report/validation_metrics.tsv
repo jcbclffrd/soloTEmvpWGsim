@@ -4,8 +4,8 @@ recall	1
 f1_score	0.008071025020177564
 pearson_r	NA
 spearman_r	NA
-mae	2259.097
-mpe	2236.7297029702972
+mae	89.103
+mpe	88.22079207920792
 n_ground_truth	10
 n_detected	2468
 n_true_positive	10

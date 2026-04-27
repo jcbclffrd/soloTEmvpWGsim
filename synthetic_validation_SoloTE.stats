@@ -1,7 +1,7 @@
-A total of 4870573 UMIs are in the final matrix.
+A total of 206621 UMIs are in the final matrix.
 Of these,
-	2180897 (44.777%) correspond to genes.
-	and 2689676 (55.223%) correspond to TEs.
+	10897 (5.274%) correspond to genes.
+	and 195724 (94.726%) correspond to TEs.
 TE detected UMIs are distributed as follows:
-	Locus-specific TEs: 2198515 UMIs (81.739%).
-	Subfamily TEs: 491161 (18.261%).
+	Locus-specific TEs: 19378 UMIs (9.901%).
+	Subfamily TEs: 176346 (90.099%).
