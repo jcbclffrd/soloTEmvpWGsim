@@ -13,7 +13,7 @@
 #SBATCH --time=02:00:00
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=32G
-#SBATCH --partition=free
+#SBATCH --partition=standard
 #SBATCH -A vswarup_lab
 
 echo "============================================"

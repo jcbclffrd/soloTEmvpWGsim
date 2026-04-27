@@ -5,7 +5,7 @@
 #SBATCH --time=00:30:00
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=4G
-#SBATCH --partition=free
+#SBATCH --partition=standard
 #SBATCH -A vswarup_lab
 
 ################################################################################

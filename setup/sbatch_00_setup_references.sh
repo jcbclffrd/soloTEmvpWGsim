@@ -6,7 +6,7 @@
 #SBATCH --ntasks=1                   # Number of tasks
 #SBATCH --cpus-per-task=2            # CPUs per task
 #SBATCH --mem=4G                     # Memory per node
-#SBATCH --partition=free             # Partition name
+#SBATCH --partition=standard         # Partition name
 #SBATCH -A vswarup_lab               # Account name
 
 # Exit on error
