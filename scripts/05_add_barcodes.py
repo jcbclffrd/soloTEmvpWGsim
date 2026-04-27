@@ -5,6 +5,11 @@ Pipeline Script 5: Add 10x Cell Barcodes and UMIs to Reads
 This script prepends cell barcodes (16bp) and UMIs (12bp) to R1 reads
 to create properly formatted 10x Chromium v3 fastq files.
 
+Simulates PCR duplication by:
+1. Pre-generating UMIs (molecules) based on expression profile
+2. Sampling UMIs with replacement when assigning to reads
+3. Multiple reads from same molecule share the same UMI
+
 10x Chromium v3 format:
     R1: [Cell Barcode 16bp][UMI 12bp][Poly-T sequence]
     R2: [cDNA sequence - actual transcript]
@@ -20,10 +25,11 @@ Output: synthetic_data/fastqs/synthetic_10x_S1_L001_R1_001.fastq.gz
 import sys
 import gzip
 import random
-import argparse
+import re
 from pathlib import Path
 from collections import defaultdict
 import yaml
+import csv
 
 print("=" * 80)
 print("Pipeline Step 5: Add 10x Cell Barcodes and UMIs")
@@ -71,12 +77,77 @@ print(f"  Example: {cell_barcodes[0]}")
 print()
 
 # ==============================================================================
+# Load Expression Profile and Pre-generate UMIs (Molecules)
+# ==============================================================================
+print("Loading expression profile and generating molecules (UMIs)...")
+
+expr_profile_file = Path("synthetic_data/transcriptome/expression_profile.tsv")
+if not expr_profile_file.exists():
+    print(f"ERROR: Expression profile not found: {expr_profile_file}")
+    print("Please run: Rscript scripts/03_create_expression_profile.R")
+    sys.exit(1)
+
+# Load expression profile: cell_id -> locus_id -> target_umis
+expression_profile = defaultdict(dict)
+with open(expr_profile_file) as f:
+    reader = csv.DictReader(f, delimiter='\t')
+    for row in reader:
+        cell_id = row['cell_id']
+        locus_id = row['locus_id']
+        target_umis = int(row['target_umis'])
+        expression_profile[cell_id][locus_id] = target_umis
+
+# Pre-generate UMIs for each cell-locus pair (simulating molecules)
+# Key insight: Multiple reads from the same molecule will share the same UMI
+# This simulates PCR duplication correctly
+cell_umis = {}  # cell_idx -> locus_id -> [list of UMIs]
+total_molecules = 0
+
+print()
+print("  Generating molecules (UMIs) for each cell-locus pair...")
+
+for cell_idx in range(N_CELLS):
+    cell_id = f"CELL_{cell_idx+1:03d}"
+    cell_umis[cell_idx] = {}
+    
+    for locus_id, target_umis in expression_profile[cell_id].items():
+        # Generate target_umis UNIQUE UMIs for this cell-locus pair
+        # Use a set to ensure uniqueness within this cell-locus combination
+        umis = set()
+        while len(umis) < target_umis:
+            umi = ''.join(random.choices('ACGT', k=UMI_LENGTH))
+            umis.add(umi)
+        cell_umis[cell_idx][locus_id] = list(umis)
+        total_molecules += len(umis)
+
+print(f"  Generated {total_molecules:,} molecules (UMIs) across {N_CELLS} cells")
+print()
+
+# Calculate expected reads per UMI (PCR duplication rate)
+total_reads = N_CELLS * READS_PER_CELL
+expected_reads_per_umi = total_reads / total_molecules
+print(f"  Expected PCR duplication rate: ~{expected_reads_per_umi:.1f} reads per UMI")
+print()
+
+# ==============================================================================
 # Helper Functions
 # ==============================================================================
 
-def generate_umi():
-    """Generate a random UMI sequence."""
-    return ''.join(random.choices('ACGT', k=UMI_LENGTH))
+def parse_locus_from_read_name(read_name):
+    """
+    Extract locus_id from read name.
+    Example: '@TE_001::chr1:52575751-52576027(+).12345' -> 'TE_001'
+    """
+    # Remove @ if present
+    read_name = read_name.lstrip('@')
+    
+    # Extract locus_id (TE_XXX) from the beginning
+    match = re.match(r'(TE_\d+)', read_name)
+    if match:
+        return match.group(1)
+    else:
+        print(f"WARNING: Could not parse locus from read name: {read_name}")
+        return None
 
 
 def parse_fastq(filename):
@@ -146,6 +217,7 @@ with gzip.open(r1_output, 'wt') as r1_out, \
     r2_parser = parse_fastq(r2_input)
     
     read_count = 0
+    umi_usage_counter = defaultdict(lambda: defaultdict(int))  # Track UMI usage
     
     for (r1_header, r1_seq, r1_plus, r1_qual), \
         (r2_header, r2_seq, r2_plus, r2_qual) in zip(r1_parser, r2_parser):
@@ -161,8 +233,17 @@ with gzip.open(r1_output, 'wt') as r1_out, \
         # Get cell barcode
         cell_barcode = cell_barcodes[current_cell_idx]
         
-        # Generate UMI
-        umi = generate_umi()
+        # Parse locus from read name to identify which TE this read came from
+        locus_id = parse_locus_from_read_name(r2_header)
+        
+        if locus_id is None or locus_id not in cell_umis[current_cell_idx]:
+            # Fallback to random UMI if we can't identify the locus
+            umi = ''.join(random.choices('ACGT', k=UMI_LENGTH))
+        else:
+            # Sample a UMI from the pre-generated pool (with replacement)
+            # This simulates PCR duplication - multiple reads share the same UMI
+            umi = random.choice(cell_umis[current_cell_idx][locus_id])
+            umi_usage_counter[current_cell_idx][locus_id] += 1
         
         # Create new R1 read: [Cell Barcode][UMI][original R1 seq (truncated)]
         # Prepend CB+UMI to R1, truncate original sequence to maintain read length
@@ -212,6 +293,23 @@ print()
 print("  Reads per cell (first 10 cells):")
 for i in range(min(10, len(reads_per_cell_counter))):
     print(f"    Cell {i+1}: {reads_per_cell_counter[i]:,} reads")
+print()
+
+# Verify PCR duplication simulation
+print("  PCR duplication validation:")
+if len(umi_usage_counter) > 0:
+    # Get first cell's statistics
+    first_cell_idx = 0
+    first_locus = list(umi_usage_counter[first_cell_idx].keys())[0]
+    reads_for_locus = umi_usage_counter[first_cell_idx][first_locus]
+    umis_for_locus = len(cell_umis[first_cell_idx][first_locus])
+    avg_reads_per_umi = reads_for_locus / umis_for_locus if umis_for_locus > 0 else 0
+    
+    print(f"    Example: Cell 1, {first_locus}")
+    print(f"      Unique UMIs (molecules): {umis_for_locus}")
+    print(f"      Total reads: {reads_for_locus}")
+    print(f"      Avg reads per UMI: {avg_reads_per_umi:.1f}x")
+    print(f"    ✓ Multiple reads share same UMI (PCR duplication simulated)")
 print()
 
 # Check R1 format

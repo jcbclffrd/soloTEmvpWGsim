@@ -31,6 +31,10 @@ synthetic_data/fastqs/*.fastq
 synthetic_data/fastqs/*.fastq.gz
 synthetic_data/outputs/
 
+# Archive folders (created by scripts/00_archive_and_clean.sh)
+# These contain timestamped backups of previous runs
+**/archive/
+
 # Keep ground truth and small metadata files
 !ground_truth/*.tsv
 !ground_truth/*.bed

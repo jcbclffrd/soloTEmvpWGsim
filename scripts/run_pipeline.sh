@@ -16,7 +16,6 @@
 ##############################################################################
 
 set -e  # Exit on error
-set -u  # Exit on undefined variable
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
@@ -31,6 +30,25 @@ echo "This will run all 8 pipeline steps sequentially."
 echo "Estimated total runtime: 30-60 minutes"
 echo ""
 echo "Started: $(date)"
+echo ""
+
+# ==============================================================================
+# Activate Conda Environment
+# ==============================================================================
+echo "Activating conda environment..."
+
+# Load miniconda module
+module load miniconda3/25.11.1
+
+# Source conda initialization (temporarily disable set -u for conda init)
+set +u
+source "$HOME/.mycondainit-25.11.1"
+
+# Activate environment
+conda activate solote_validation
+set -u  # Re-enable exit on undefined variable
+
+echo "✓ Conda environment activated: solote_validation"
 echo ""
 
 # ==============================================================================
@@ -62,6 +80,16 @@ if [[ ! -f "software/SoloTE/SoloTE_pipeline.py" ]]; then
 fi
 
 echo "✓ Setup complete, ready to run pipeline"
+echo ""
+
+# ==============================================================================
+# Archive previous run and clean data folders
+# ==============================================================================
+echo "================================================================================"
+echo "Step 0/8: Archive previous run and clean data folders"
+echo "================================================================================"
+echo ""
+bash scripts/00_archive_and_clean.sh
 echo ""
 
 # ==============================================================================
