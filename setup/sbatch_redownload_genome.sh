@@ -33,10 +33,13 @@ echo "Started: $(date)"
 echo "============================================"
 echo ""
 
-# Get script directory
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-REPO_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
+# Get repository root (Slurm job submitted from repo root)
+REPO_ROOT="$SLURM_SUBMIT_DIR"
 GENOME_DIR="$REPO_ROOT/references/genome"
+
+echo "Repository root: $REPO_ROOT"
+echo "Genome directory: $GENOME_DIR"
+echo ""
 
 cd "$GENOME_DIR"
 
