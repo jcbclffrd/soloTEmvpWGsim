@@ -41,7 +41,8 @@ echo "1. Downloading T2T-CHM13v2.0 Genome"
 echo "============================================"
 echo ""
 
-GENOME_URL="https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/009/914/755/GCF_009914755.1_T2T-CHM13v2.0/GCF_009914755.1_T2T-CHM13v2.0_genomic.fna.gz"
+# Use T2T Consortium version with chr naming (matches RepeatMasker)
+GENOME_URL="https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/CHM13/assemblies/analysis_set/chm13v2.0.fa.gz"
 GENOME_FILE="T2T-CHM13v2.0.fa.gz"
 GENOME_FA="T2T-CHM13v2.0.fa"
 
@@ -49,11 +50,12 @@ if [[ -f "$GENOME_FA" ]]; then
     echo "✓ Genome already exists: $GENOME_FA"
     echo "  Skipping download"
 else
-    echo "Downloading T2T genome from NCBI..."
+    echo "Downloading T2T genome from T2T Consortium (AWS S3)..."
+    echo "  Note: Using chr naming to match RepeatMasker"
     echo "  Source: $GENOME_URL"
     echo "  Target: $GENOME_FILE"
     echo ""
-    echo "This will download ~1 GB (uncompressed: ~3 GB)"
+    echo "This will download ~936 MB (uncompressed: ~3 GB)"
     echo ""
     
     wget -O "$GENOME_FILE" "$GENOME_URL"

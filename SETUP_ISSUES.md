@@ -269,3 +269,40 @@ Execution halted
 - `scripts/01_select_te_loci.R`
 
 ---
+
+### 9. ✅ Chromosome Naming Mismatch (IN PROGRESS)
+
+**Issue**: Pipeline step 2 fails because chromosome names don't match between genome and RepeatMasker
+
+**Error**:
+```
+WARNING. chromosome (chr1) was not found in the FASTA file. Skipping.
+WARNING. chromosome (chr15) was not found in the FASTA file. Skipping.
+...
+Sequences in transcriptome: 0
+```
+
+**Root Cause**:
+- Downloaded genome from NCBI RefSeq: uses accession IDs (NC_060925.1, NC_060926.1, etc.)
+- RepeatMasker from T2T Consortium: uses chr naming (chr1, chr2, chr3, etc.)
+- bedtools getfasta can't find matching chromosomes
+
+**Fix Applied**:
+1. Updated `setup/00_setup_references.sh` to use T2T Consortium genome:
+   - Old: `https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/009/914/755/...`
+   - New: `https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/CHM13/assemblies/analysis_set/chm13v2.0.fa.gz`
+2. Created `setup/sbatch_redownload_genome.sh` for HPC-compliant redownload
+3. Will need to rebuild STAR index after genome replacement
+
+**Status**: Sbatch job ready to submit
+
+**Next Steps**:
+1. Submit: `sbatch setup/sbatch_redownload_genome.sh`
+2. After completion, rebuild STAR index: `sbatch setup/sbatch_01_build_star_index.sh`
+3. Rerun pipeline
+
+**Files Modified**:
+- `setup/00_setup_references.sh`
+- `setup/sbatch_redownload_genome.sh` (NEW)
+
+---
