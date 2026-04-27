@@ -166,12 +166,13 @@ with gzip.open(r1_output, 'wt') as r1_out, \
         
         # Create new R1 read: [Cell Barcode][UMI][original R1 seq (truncated)]
         # Prepend CB+UMI to R1, truncate original sequence to maintain read length
-        # Total R1 length should be 28bp (CB) + 12bp (UMI) + remaining sequence
+        # Note: With 50bp simulated reads, final R1 will be ~78bp (28bp barcode+UMI + 50bp seq)
         barcode_umi = cell_barcode + umi
         barcode_umi_qual = 'I' * len(barcode_umi)  # High quality scores for barcodes
         
-        # Truncate original R1 sequence to fit
-        max_original_len = 150 - len(barcode_umi)  # Assuming 150bp total read length
+        # Truncate original R1 sequence to fit target length (or use all if shorter)
+        target_r1_len = 150  # Target final R1 length (for 150bp simulated reads)
+        max_original_len = target_r1_len - len(barcode_umi)
         r1_seq_truncated = r1_seq[:max_original_len]
         r1_qual_truncated = r1_qual[:max_original_len]
         

@@ -87,16 +87,17 @@ echo "Started: $(date)"
 echo ""
 
 # Run wgsim
-# Note: -d 300 sets insert size to 300bp (typical for 10x)
-# Note: -s 50 sets insert size standard deviation
+# Note: Reduced fragment size to fit short TEs (200-400 bp)
+# For TEs ~200-400 bp, use: 50bp reads + 100bp insert = 200bp fragments
+# This ensures most TEs can generate reads
 wgsim \
     -e 0.001 \
     -r 0.0 \
     -R 0.0 \
-    -1 $READ_LENGTH \
-    -2 $READ_LENGTH \
-    -d 300 \
-    -s 50 \
+    -1 50 \
+    -2 50 \
+    -d 100 \
+    -s 20 \
     -N $TOTAL_READS \
     -S $RANDOM_SEED \
     "$TRANSCRIPTOME" \

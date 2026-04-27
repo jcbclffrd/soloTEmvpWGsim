@@ -270,7 +270,7 @@ Execution halted
 
 ---
 
-### 9. ✅ Chromosome Naming Mismatch (IN PROGRESS)
+### 9. ✅ Chromosome Naming Mismatch (FIXED)
 
 **Issue**: Pipeline step 2 fails because chromosome names don't match between genome and RepeatMasker
 
@@ -292,17 +292,97 @@ Sequences in transcriptome: 0
    - Old: `https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/009/914/755/...`
    - New: `https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/CHM13/assemblies/analysis_set/chm13v2.0.fa.gz`
 2. Created `setup/sbatch_redownload_genome.sh` for HPC-compliant redownload
-3. Will need to rebuild STAR index after genome replacement
+3. Fixed sbatch script path resolution (SLURM_SUBMIT_DIR)
+4. Rebuilt STAR index successfully (Job 51402342, 40 min)
 
-**Status**: Sbatch job ready to submit
-
-**Next Steps**:
-1. Submit: `sbatch setup/sbatch_redownload_genome.sh`
-2. After completion, rebuild STAR index: `sbatch setup/sbatch_01_build_star_index.sh`
-3. Rerun pipeline
+**Status**: ✅ Complete - genome redownloaded and STAR index rebuilt
 
 **Files Modified**:
 - `setup/00_setup_references.sh`
 - `setup/sbatch_redownload_genome.sh` (NEW)
+
+---
+
+### 10. ✅ STAR Alignment Missing Threads (FIXED)
+
+**Issue**: Pipeline step 6 fails with STAR fatal error - empty runThreadN parameter
+
+**Error**:
+```
+EXITING: FATAL INPUT ERROR: empty value for parameter "runThreadN"
+SOLUTION: use non-empty value for this parameter
+```
+
+**Root Cause**:
+- Line 41 in `scripts/06_align_starsolo.sh` has broken grep logic
+- Command: `grep "threads:" config.yaml | grep -A1 "alignment:"`
+- Tries to find "alignment:" in lines containing "threads:", returns empty
+
+**Fix Applied**:
+- Changed to: `awk '/^alignment:/,/^[a-z]/ {if ($1 == "threads:") print $2}' config.yaml`
+- Properly extracts `threads: 16` from alignment section
+
+**Files Modified**:
+- `scripts/06_align_starsolo.sh`
+
+---
+
+### 11. ✅ wgsim Fragment Size Too Large for Short TEs (FIXED)
+
+**Issue**: wgsim skips most TEs because fragment size > TE length
+
+**Error**:
+```
+[wgsim_core] skip sequence 'TE_001::chr1:52575751-52576027(+)' as it is shorter than 450!
+[wgsim_core] skip sequence 'TE_002::chr15:25994289-25994582(+)' as it is shorter than 450!
+... (9 out of 10 TEs skipped)
+```
+
+**Root Cause**:
+- wgsim using 150bp reads + 300bp insert = 600bp total fragments
+- Most TEs are 200-400bp (min_te_length: 200, max: 6000)
+- wgsim requires sequence length >= fragment size
+- Only TE_008 (1466bp) could generate reads
+
+**Fix Applied**:
+- Reduced read length: 150bp → 50bp
+- Reduced insert size: 300bp → 100bp
+- New fragment size: 50 + 100 + 50 = 200bp
+- Matches min_te_length in config (200bp)
+- Updated comment in `scripts/05_add_barcodes.py` to reflect shorter reads
+
+**Files Modified**:
+- `scripts/04_simulate_reads.sh`
+- `scripts/05_add_barcodes.py`
+
+---
+
+### 12. ✅ Sbatch Preemption on Free Partition (FIXED)
+
+**Issue**: STAR index build cancelled after 2.5 minutes due to preemption
+
+**Error**:
+```
+[2026-04-26T18:51:11.802] error: *** JOB 51402135 ON hpc3-14-31 CANCELLED AT 
+2026-04-26T18:51:11 DUE TO PREEMPTION ***
+```
+
+**Root Cause**:
+- All sbatch scripts using `--partition=free`
+- Free partition is preemptible even with `-A vswarup_lab`
+- Long-running jobs (STAR ~38 min) get killed for higher-priority jobs
+
+**Fix Applied**:
+- Changed all sbatch scripts from `--partition=free` to `--partition=standard`
+- Standard partition uses allocation but is non-preemptible
+- STAR rebuild (Job 51402342) completed successfully in 40 min
+
+**Files Modified**:
+- `setup/sbatch_01_build_star_index.sh`
+- `sbatch_run_pipeline.sh`
+- `setup/sbatch_redownload_genome.sh`
+- `setup/sbatch_00_setup_references.sh`
+- `setup/sbatch_02_install_solote.sh`
+- `setup/sbatch_recreate_environment.sh`
 
 ---

@@ -36,7 +36,8 @@ echo ""
 
 # Load config
 STAR_INDEX=$(grep "star_index:" config.yaml | awk '{print $2}')
-THREADS=$(grep "threads:" config.yaml | grep -A1 "alignment:" | tail -1 | awk '{print $2}')
+# Get threads from alignment section
+THREADS=$(awk '/^alignment:/,/^[a-z]/ {if ($1 == "threads:") print $2}' config.yaml)
 CB_START=$(grep "cb_start:" config.yaml | awk '{print $2}')
 CB_LEN=$(grep "cb_len:" config.yaml | awk '{print $2}')
 UMI_START=$(grep "umi_start:" config.yaml | awk '{print $2}')
