@@ -13,9 +13,10 @@ Reference snapshot: tag `v0.1-hpc-uci` (commit `67d2d9f`).
    is overkill and adds maintenance burden. All the SLURM wrappers in this repo are
    thin `sbatch` launchers around plain `bash` scripts — just call the bash scripts
    directly.
-2. **Verify ARM64 (`aarch64`) compatibility** of the bioinformatics stack before
-   trying to recreate the conda env — DGX Spark uses NVIDIA's GB10 (Arm Neoverse).
-   Bioconda has spotty ARM support and this is the most likely blocker.
+2. **ARM64 (`aarch64`) is fine for this stack** — STAR, samtools, bedtools, wgsim,
+   R, and Python all have ARM builds available via bioconda/conda-forge or compile
+   cleanly from source. (Cell Ranger would be a blocker, but this pipeline doesn't
+   use it.) The HPC3 env uses `STAR-avx2`; on ARM you'll get plain `STAR` (NEON).
 3. **You are inheriting a known root-cause bug** (see [KNOWN_ISSUES.md](KNOWN_ISSUES.md) Issue #1):
    the STAR index needs to be rebuilt with a real gene GTF, not the TE-only GTF
    currently in the repo. Plan to do this on the DGX before re-running validation.
@@ -90,11 +91,12 @@ the env. Critical tools:
 
 | Tool | Notes for ARM64 |
 |---|---|
-| **STAR** | No official aarch64 binary. May need to compile from source (`make STAR`) — straightforward but not free. Verify it builds. |
-| **samtools / htslib / bedtools** | Have ARM64 conda packages on `bioconda` — usually fine. |
+| **STAR** | Supports aarch64. Bioconda has ARM64 builds; source builds cleanly with `make STAR` if needed. Note: the `STAR-avx2` binary used on HPC3 is x86-only — on ARM use plain `STAR` (NEON SIMD). |
+| **samtools / htslib / bedtools** | Have ARM64 conda packages on `bioconda` — fine. |
 | **wgsim** | Tiny C program, will compile from source in seconds if no package. |
 | **R + tidyverse** | Available on `conda-forge` for ARM64. Slow first install. |
 | **soloTE** | Pure Python (`software/SoloTE/SoloTE_pipeline.py`); only depends on `pysam`, `pandas`, `numpy` — all ARM-friendly. |
+| **Cell Ranger** *(not used here)* | x86_64 only — would be a blocker if ever introduced. Stick with STARsolo. |
 
 If `x86_64` (e.g. you're using Spark in an x86 emulation mode), use the existing
 `environment.yml` directly.
@@ -117,13 +119,17 @@ Rscript -e 'cat(R.version.string, "\n")'
 python -c "import pysam, pandas, numpy; print('ok')"
 ```
 
-If `STAR` is missing for ARM64, build it:
+If the bioconda `STAR` package is unavailable for some reason, build from source
+(works cleanly on aarch64):
 
 ```bash
 git clone https://github.com/alexdobin/STAR.git
 cd STAR/source && make STAR
 # Place the resulting STAR binary on PATH (e.g. cp into the conda env's bin/)
 ```
+
+Note: on HPC3 the env uses `STAR-avx2` (x86 AVX2 SIMD). On ARM64 you'll get plain
+`STAR` instead, which uses NEON SIMD. Performance is comparable for this workload.
 
 ### 4. References
 
