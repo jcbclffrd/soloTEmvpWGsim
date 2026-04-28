@@ -306,29 +306,41 @@ message("")
 # 6. SAVE SUMMARY TABLE
 # ==============================================================================
 summary_tbl <- tibble(
-  parameter           = c(
-    "cfg_n_cells", "cfg_n_te_loci", "cfg_umi_per_locus_per_cell",
-    "cfg_reads_per_cell", "cfg_total_reads", "cfg_total_gt_umis",
-    "obs_cells_in_matrix", "obs_total_features_in_matrix",
-    "obs_gt_loci_detected", "obs_gt_loci_missed",
-    "obs_gt_total_umis", "obs_recovery_rate_pct",
-    "obs_mean_umis_per_locus_per_cell", "obs_gt_share_of_all_umis_pct"
+  parameter = c(
+    "n_cells",
+    "n_te_loci",
+    "umi_per_locus_per_cell",
+    "reads_per_cell",
+    "total_reads",
+    "total_gt_umis",
+    "recovery_rate_pct",
+    "gt_share_of_all_umis_pct",
+    "total_features_in_matrix",
+    "gt_loci_missed"
   ),
-  config_value        = c(
-    cfg_cells, cfg_loci, cfg_umi_per_loc,
-    cfg_reads_cell, cfg_total_reads, cfg_cells * cfg_loci * cfg_umi_per_loc,
-    NA, NA, NA, NA, NA, NA, NA, NA
-  ),
-  observed_value      = c(
-    NA, NA, NA, NA,
-    if (!is.na(star_input)) star_input else NA,
+  config = c(
+    cfg_cells,
+    cfg_loci,
+    cfg_umi_per_loc,
+    cfg_reads_cell,
+    cfg_total_reads,
+    cfg_cells * cfg_loci * cfg_umi_per_loc,
+    100,    # expected recovery is 100%
     NA,
-    obs_cells, obs_total_features,
-    n_gt_detected, n_gt_missed,
+    NA,
+    0       # expected: no loci missed
+  ),
+  observed = c(
+    obs_cells,
+    n_gt_detected,
+    if (n_gt_detected > 0) round(obs_mean_per_cell, 2) else NA,
+    NA,     # not directly measurable per-cell from STAR log
+    if (!is.na(star_input)) star_input else NA,
     obs_gt_total_umis,
     round(recovery_rate * 100, 2),
-    if (n_gt_detected > 0) round(obs_mean_per_cell, 2) else NA,
-    if (n_gt_detected > 0) round(gt_fraction * 100, 2) else NA
+    if (n_gt_detected > 0) round(gt_fraction * 100, 2) else NA,
+    obs_total_features,
+    n_gt_missed
   )
 )
 
