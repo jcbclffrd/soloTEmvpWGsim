@@ -7,5 +7,4 @@ total_reads	5000000	5000001
 total_gt_umis	1000000	19539
 recovery_rate_pct	100	1.95
 gt_share_of_all_umis_pct	NA	61.53
-total_features_in_matrix	NA	6387
 gt_loci_missed	0	0

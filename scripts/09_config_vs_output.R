@@ -315,7 +315,6 @@ summary_tbl <- tibble(
     "total_gt_umis",
     "recovery_rate_pct",
     "gt_share_of_all_umis_pct",
-    "total_features_in_matrix",
     "gt_loci_missed"
   ),
   config = c(
@@ -326,7 +325,6 @@ summary_tbl <- tibble(
     cfg_total_reads,
     cfg_cells * cfg_loci * cfg_umi_per_loc,
     100,    # expected recovery is 100%
-    NA,
     NA,
     0       # expected: no loci missed
   ),
@@ -339,7 +337,6 @@ summary_tbl <- tibble(
     obs_gt_total_umis,
     round(recovery_rate * 100, 2),
     if (n_gt_detected > 0) round(gt_fraction * 100, 2) else NA,
-    obs_total_features,
     n_gt_missed
   )
 )
