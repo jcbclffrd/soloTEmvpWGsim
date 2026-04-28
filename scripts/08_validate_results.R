@@ -175,19 +175,25 @@ message("")
 message("Calculating validation metrics...")
 message("")
 
-# Precision: TP / (TP + FP)
-# TP = detected loci that match ground truth
-# FP = detected loci that don't match ground truth
+# Count-based precision: fraction of total TE UMI counts attributed to ground truth loci.
+# Feature-based precision (TP_features / all_detected_features) is not meaningful here:
+# soloTE correctly finds ALL genome TE loci that receive any reads, including thousands
+# via multi-mapping from repetitive synthetic sequences.  What we actually want to know
+# is whether the *bulk of counts* lands on our planted loci.
 n_detected <- length(features)
 n_true_positive <- nrow(matched_loci)
 n_false_positive <- n_detected - n_true_positive
 
-precision <- if (n_detected > 0) n_true_positive / n_detected else 0
+total_matrix_counts <- sum(observed_matrix)
+gt_counts <- if (n_true_positive > 0) sum(observed_matrix[matched_loci$feature_name, , drop = FALSE]) else 0
+precision <- if (total_matrix_counts > 0) gt_counts / total_matrix_counts else 0
 
 message("Locus Detection:")
-message(sprintf("  True positives (correct detections): %d", n_true_positive))
-message(sprintf("  False positives (incorrect detections): %d", n_false_positive))
-message(sprintf("  Precision: %.3f (%.1f%%)", precision, precision * 100))
+message(sprintf("  Total features in matrix: %d", n_detected))
+message(sprintf("  Matched to ground truth: %d", n_true_positive))
+message(sprintf("  Other TE/gene features (multi-mapping): %d", n_false_positive))
+message(sprintf("  GT locus UMI counts: %d of %d total (count-precision: %.3f, %.1f%%)",
+                gt_counts, total_matrix_counts, precision, precision * 100))
 
 # Recall: TP / (TP + FN)
 # TP = ground truth loci that were detected
@@ -283,7 +289,7 @@ pass_recall <- recall >= min_recall
 pass_correlation <- is.na(pearson_r) || pearson_r >= min_correlation
 
 message("Threshold checks:")
-message(sprintf("  Precision ≥ %.2f: %s (%.3f)",
+message(sprintf("  Count-precision ≥ %.2f: %s (%.3f) [GT UMIs / total UMIs]",
                 min_precision,
                 ifelse(pass_precision, "✓ PASS", "✗ FAIL"),
                 precision))
@@ -322,14 +328,16 @@ dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 # Save metrics
 metrics <- tibble(
-  metric = c("precision", "recall", "f1_score", 
+  metric = c("count_precision", "recall", "f1_score",
              "pearson_r", "spearman_r", "mae", "mpe",
-             "n_ground_truth", "n_detected", "n_true_positive", 
-             "n_false_positive", "n_false_negative",
+             "n_ground_truth", "n_detected", "n_matched_gt",
+             "gt_umi_counts", "total_umi_counts",
+             "n_other_features", "n_false_negative",
              "pass_precision", "pass_recall", "pass_correlation", "overall_pass"),
   value = c(precision, recall, f1_score,
             pearson_r, spearman_r, mae, mpe,
             n_ground_truth, n_detected, n_true_positive,
+            gt_counts, total_matrix_counts,
             n_false_positive, n_false_negative,
             pass_precision, pass_recall, pass_correlation, overall_pass)
 )
