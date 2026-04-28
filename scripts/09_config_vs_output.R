@@ -309,6 +309,7 @@ summary_tbl <- tibble(
   parameter = c(
     "n_cells",
     "n_te_loci",
+    "total_features_in_matrix",
     "umi_per_locus_per_cell",
     "reads_per_cell",
     "total_reads",
@@ -320,19 +321,21 @@ summary_tbl <- tibble(
   config = c(
     cfg_cells,
     cfg_loci,
+    cfg_loci,   # planted loci; soloTE will find more via multi-mapping
     cfg_umi_per_loc,
     cfg_reads_cell,
     cfg_total_reads,
     cfg_cells * cfg_loci * cfg_umi_per_loc,
-    100,    # expected recovery is 100%
+    100,        # expected recovery is 100%
     NA,
-    0       # expected: no loci missed
+    0           # expected: no loci missed
   ),
   observed = c(
     obs_cells,
     n_gt_detected,
+    obs_total_features,
     if (n_gt_detected > 0) round(obs_mean_per_cell, 2) else NA,
-    NA,     # not directly measurable per-cell from STAR log
+    NA,         # not directly measurable per-cell from STAR log
     if (!is.na(star_input)) star_input else NA,
     obs_gt_total_umis,
     round(recovery_rate * 100, 2),
