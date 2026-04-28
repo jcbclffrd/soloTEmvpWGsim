@@ -24,7 +24,7 @@ simulation:
   n_cells: 100
   
   # Number of TE loci to include in ground truth
-  n_te_loci: 10
+  n_te_loci: 100
   
   # Sequencing depth
   reads_per_cell: 50000  # Total reads per cell
