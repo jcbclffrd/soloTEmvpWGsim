@@ -40,7 +40,9 @@ config <- yaml::read_yaml("config.yaml")
 cfg_cells        <- config$simulation$n_cells
 cfg_loci         <- config$simulation$n_te_loci
 cfg_reads_cell   <- config$simulation$reads_per_cell
-cfg_umi_per_loc  <- as.integer(cfg_reads_cell / cfg_loci)  # derived: reads_per_cell / n_te_loci
+cfg_umi_per_loc  <- config$simulation$umi_per_locus          # set: expression level
+cfg_reads_per_locus <- cfg_reads_cell / cfg_loci             # derived: reads/locus/cell
+cfg_pcr_rate     <- cfg_reads_per_locus / cfg_umi_per_loc    # derived: PCR duplication
 cfg_read_len     <- config$simulation$read_length
 cfg_cb_len       <- config$simulation$cb_length
 cfg_umi_len      <- config$simulation$umi_length
@@ -311,6 +313,8 @@ summary_tbl <- tibble(
     "n_te_loci",
     "total_features_in_matrix",
     "umi_per_locus_per_cell",
+    "reads_per_locus_per_cell",
+    "pcr_duplication_rate",
     "reads_per_cell",
     "total_reads",
     "total_gt_umis",
@@ -321,8 +325,10 @@ summary_tbl <- tibble(
   config = c(
     cfg_cells,
     cfg_loci,
-    cfg_loci,   # planted loci; soloTE will find more via multi-mapping
-    cfg_umi_per_loc,
+    cfg_loci,           # planted loci; soloTE will find more via multi-mapping
+    cfg_umi_per_loc,    # set: expression level
+    cfg_reads_per_locus,  # derived: reads_per_cell / n_te_loci
+    round(cfg_pcr_rate, 1),  # derived: reads_per_locus / umi_per_locus
     cfg_reads_cell,
     cfg_total_reads,
     cfg_cells * cfg_loci * cfg_umi_per_loc,
@@ -335,7 +341,9 @@ summary_tbl <- tibble(
     n_gt_detected,
     obs_total_features,
     if (n_gt_detected > 0) round(obs_mean_per_cell, 2) else NA,
-    NA,         # not directly measurable per-cell from STAR log
+    NA,   # reads_per_locus_per_cell not directly observable post-alignment
+    NA,   # pcr_duplication_rate not directly observable post-dedup
+    NA,   # reads_per_cell not directly measurable per-cell from STAR log
     if (!is.na(star_input)) star_input else NA,
     obs_gt_total_umis,
     round(recovery_rate * 100, 2),

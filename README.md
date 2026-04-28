@@ -194,13 +194,28 @@ Edit `config.yaml` to customize:
 - **Alignment parameters**: Threads, multimapper handling
 - **Validation thresholds**: Minimum precision/recall/correlation
 
+### Simulation parameter relationships
+
+| Parameter | Type | Meaning |
+|-----------|------|---------|
+| `n_cells` | set | How many synthetic cells to generate |
+| `n_te_loci` | set | How many TE loci to include in ground truth |
+| `reads_per_cell` | set | Sequencing depth (total reads per cell) |
+| `umi_per_locus` | set | Expression level — captured RNA molecules per locus per cell |
+| `reads_per_locus_per_cell` | **derived** | `reads_per_cell / n_te_loci` |
+| PCR duplication rate | **derived** | `reads_per_locus_per_cell / umi_per_locus` |
+
+`umi_per_locus` is independent of sequencing depth — it represents expression level and in a
+real experiment would be estimated empirically. Setting it higher relative to `reads_per_cell`
+means lower PCR duplication (fewer reads per captured molecule).
+
 Example:
 ```yaml
 simulation:
   n_cells: 100           # Number of synthetic cells
-  n_te_loci: 10          # Number of TE loci in ground truth
-  reads_per_cell: 50000  # Sequencing depth
-  umi_per_locus: 100     # Target UMI count per TE per cell
+  n_te_loci: 100         # Number of TE loci in ground truth
+  reads_per_cell: 50000  # Sequencing depth → 500 reads/locus/cell (derived)
+  umi_per_locus: 100     # Expression level → 5x PCR duplication rate (derived)
 ```
 
 ---

@@ -2,10 +2,12 @@ parameter	config	observed
 n_cells	100	100
 n_te_loci	100	100
 total_features_in_matrix	100	6387
-umi_per_locus_per_cell	500	1.95
+umi_per_locus_per_cell	100	1.95
+reads_per_locus_per_cell	500	NA
+pcr_duplication_rate	5	NA
 reads_per_cell	50000	NA
 total_reads	5000000	5000001
-total_gt_umis	5000000	19539
-recovery_rate_pct	100	0.39
+total_gt_umis	1000000	19539
+recovery_rate_pct	100	1.95
 gt_share_of_all_umis_pct	NA	61.53
 gt_loci_missed	0	0
