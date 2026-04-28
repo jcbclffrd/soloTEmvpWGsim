@@ -1,0 +1,15 @@
+parameter	config_value	observed_value
+cfg_n_cells	100	NA
+cfg_n_te_loci	100	NA
+cfg_umi_per_locus_per_cell	100	NA
+cfg_reads_per_cell	50000	NA
+cfg_total_reads	5000000	5000001
+cfg_total_gt_umis	1000000	NA
+obs_cells_in_matrix	NA	100
+obs_total_features_in_matrix	NA	6387
+obs_gt_loci_detected	NA	100
+obs_gt_loci_missed	NA	0
+obs_gt_total_umis	NA	19539
+obs_recovery_rate_pct	NA	1.95
+obs_mean_umis_per_locus_per_cell	NA	1.95
+obs_gt_share_of_all_umis_pct	NA	61.53

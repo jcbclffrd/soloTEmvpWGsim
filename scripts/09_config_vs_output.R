@@ -20,6 +20,13 @@ suppressPackageStartupMessages({
   library(Matrix)
 })
 
+# Tee all message() output to a human-readable report file
+output_dir <- "validation_report"
+dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+report_path <- file.path(output_dir, "pipeline_report.txt")
+report_con  <- file(report_path, open = "w")
+sink(report_con, type = "message")
+
 message("================================================================================")
 message("Pipeline Step 9: Config-In vs Pipeline-Out Summary")
 message("================================================================================")
@@ -298,9 +305,6 @@ message("")
 # ==============================================================================
 # 6. SAVE SUMMARY TABLE
 # ==============================================================================
-output_dir <- "validation_report"
-dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
-
 summary_tbl <- tibble(
   parameter           = c(
     "cfg_n_cells", "cfg_n_te_loci", "cfg_umi_per_locus_per_cell",
@@ -330,8 +334,14 @@ summary_tbl <- tibble(
 
 write_tsv(summary_tbl, file.path(output_dir, "config_vs_output.tsv"))
 message(sprintf("✓ Summary table saved: %s/config_vs_output.tsv", output_dir))
+message(sprintf("✓ Report saved:        %s/pipeline_report.txt", output_dir))
 message("")
 message("================================================================================")
 message("Step 9 Complete!")
 message("================================================================================")
 message("")
+
+# Close the message sink so the final confirmation prints to terminal, not file
+sink(type = "message")
+close(report_con)
+cat(sprintf("\nReport written to: %s/pipeline_report.txt\n", output_dir))
