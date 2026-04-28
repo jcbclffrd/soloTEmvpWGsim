@@ -39,8 +39,8 @@ config <- yaml::read_yaml("config.yaml")
 
 cfg_cells        <- config$simulation$n_cells
 cfg_loci         <- config$simulation$n_te_loci
-cfg_umi_per_loc  <- config$simulation$umi_per_locus
 cfg_reads_cell   <- config$simulation$reads_per_cell
+cfg_umi_per_loc  <- as.integer(cfg_reads_cell / cfg_loci)  # derived: reads_per_cell / n_te_loci
 cfg_read_len     <- config$simulation$read_length
 cfg_cb_len       <- config$simulation$cb_length
 cfg_umi_len      <- config$simulation$umi_length

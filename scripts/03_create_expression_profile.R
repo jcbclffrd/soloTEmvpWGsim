@@ -28,14 +28,22 @@ message("")
 # ==============================================================================
 config <- yaml::read_yaml("config.yaml")
 
-n_cells <- config$simulation$n_cells
-umi_per_locus <- config$simulation$umi_per_locus
-random_seed <- config$simulation$random_seed
+n_cells        <- config$simulation$n_cells
+reads_per_cell <- config$simulation$reads_per_cell
+n_te_loci      <- config$simulation$n_te_loci
+random_seed    <- config$simulation$random_seed
 expression_model <- config$extensions$expression_model
+
+# umi_per_locus is derived, not read from config.
+# With reads distributed uniformly across n_te_loci, each locus receives
+# reads_per_cell / n_te_loci reads → that many unique UMIs before multi-mapping.
+umi_per_locus <- as.integer(reads_per_cell / n_te_loci)
 
 message("Configuration:")
 message(sprintf("  Number of cells: %d", n_cells))
-message(sprintf("  UMIs per locus per cell: %d", umi_per_locus))
+message(sprintf("  Reads per cell: %d", reads_per_cell))
+message(sprintf("  TE loci: %d", n_te_loci))
+message(sprintf("  UMIs per locus per cell (derived): %d  [= reads_per_cell / n_te_loci]", umi_per_locus))
 message(sprintf("  Expression model: %s", expression_model))
 message(sprintf("  Random seed: %d", random_seed))
 message("")

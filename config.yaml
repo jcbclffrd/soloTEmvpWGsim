@@ -29,8 +29,10 @@ simulation:
   # Sequencing depth
   reads_per_cell: 50000  # Total reads per cell
   
-  # Expression level (uniform for initial validation)
-  umi_per_locus: 100     # Target UMIs per TE locus per cell
+  # DERIVED — do not set manually.
+  # Calculated as reads_per_cell / n_te_loci by scripts 03 and 09.
+  # Value here is informational only and is ignored at runtime.
+  umi_per_locus: 500     # = reads_per_cell / n_te_loci = 50000 / 100
   
   # Read parameters (10x Chromium v3)
   read_length: 150       # bp
