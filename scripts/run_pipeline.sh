@@ -37,12 +37,9 @@ echo ""
 # ==============================================================================
 echo "Activating conda environment..."
 
-# Load miniconda module
-module load miniconda3/25.11.1
-
 # Source conda initialization (temporarily disable set -u for conda init)
 set +u
-source "$HOME/.mycondainit-25.11.1"
+source "$HOME/miniconda3/etc/profile.d/conda.sh"
 
 # Activate environment
 conda activate solote_validation

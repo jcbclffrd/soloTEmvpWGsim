@@ -130,20 +130,20 @@ else
     echo ""
     
     # Filter to TE classes and convert to 6-column BED format for soloTE
-    # Column 4 format: chrom|start|end|family:subfamily:class|score|strand
+    # BED columns: chr, start, end, repName, score, strand, repClass, repFamily, pct_div, ID
+    # Column 4 output format: chrom|start|end|repName:repFamily:repClass|score|strand
     awk 'BEGIN {OFS="\t"}
     {
-        # Extract TE class from column 12 (repClass)
-        class = $12
-        family = $11  # repFamily
-        name = $10    # repName
-        
+        name = $4    # repName
+        class = $7   # repClass
+        family = $8  # repFamily
+
         # Filter to TE classes only
         if (class ~ /LINE|SINE|LTR|DNA|RC/) {
             # Create soloTE-compatible name field
             # Format: chr|start|end|name:family:class|score|strand
             name_field = $1 "|" $2 "|" $3 "|" name ":" family ":" class "|" $5 "|" $6
-            
+
             print $1, $2, $3, name_field, $5, $6
         }
     }' "$RMSK_BED" > "$RMSK_FILTERED"

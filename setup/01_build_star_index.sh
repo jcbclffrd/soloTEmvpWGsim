@@ -46,9 +46,27 @@ echo ""
 
 # Paths
 GENOME_DIR="$REPO_ROOT/references/genome"
+ANNOT_DIR="$REPO_ROOT/references/annotations"
 INDEX_DIR="$REPO_ROOT/references/STARsolo_index"
 GENOME_FA="$GENOME_DIR/T2T-CHM13v2.0.fa"
-GTF_FILE="$REPO_ROOT/references/annotations/selected_te_loci.gtf"
+# Use real gene annotation (chr-named RefSeq Liftoff from T2T consortium)
+# This fixes KNOWN_ISSUES.md Issue #1 (TE reads were being tagged as genes)
+GENE_GFF3="$ANNOT_DIR/chm13v2.0_RefSeq_Liftoff_v5.1.gff3"
+GTF_FILE="$GENE_GFF3"
+
+# Download chr-named gene annotation if not present
+mkdir -p "$ANNOT_DIR"
+if [[ ! -f "$GENE_GFF3" ]]; then
+    echo "Downloading T2T RefSeq Liftoff gene annotation (chr-named)..."
+    GFF3_GZ="${GENE_GFF3}.gz"
+    GFF3_URL="https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/CHM13/assemblies/annotation/chm13v2.0_RefSeq_Liftoff_v5.1.gff3.gz"
+    wget -O "$GFF3_GZ" "$GFF3_URL"
+    gunzip "$GFF3_GZ"
+    echo "✓ Gene annotation downloaded: $GENE_GFF3"
+else
+    echo "✓ Gene annotation already exists: $GENE_GFF3"
+fi
+echo ""
 
 # Validate genome exists
 if [[ ! -f "$GENOME_FA" ]]; then
@@ -107,20 +125,22 @@ echo ""
 # Determine number of threads (use config or default)
 THREADS=${THREADS:-16}
 
-# Check if GTF exists
+# Validate annotation
 if [[ ! -f "$GTF_FILE" ]]; then
-    echo "ERROR: GTF file not found: $GTF_FILE"
-    echo "Creating GTF from selected TE loci..."
-    bash "$REPO_ROOT/scripts/convert_te_to_gtf.sh"
+    echo "ERROR: Gene annotation not found: $GTF_FILE"
+    echo "Download failed — check connectivity and re-run this script."
+    exit 1
 fi
 
 # Build index
+# --sjdbGTFtagExonParentTranscript Parent: interpret GFF3 Parent attribute
 STAR \
     --runMode genomeGenerate \
     --runThreadN "$THREADS" \
     --genomeDir "$INDEX_DIR" \
     --genomeFastaFiles "$GENOME_FA" \
     --sjdbGTFfile "$GTF_FILE" \
+    --sjdbGTFtagExonParentTranscript Parent \
     --genomeSAindexNbases 14
 
 echo ""
