@@ -24,7 +24,7 @@ simulation:
   n_cells: 10
   
   # Number of TE loci to include in ground truth
-  n_te_loci: 100
+  n_te_loci: 50
   
   # Sequencing depth
   reads_per_cell: 50  # Total reads per cell
@@ -39,7 +39,7 @@ simulation:
   # pcr_duplication_rate     = reads_per_locus_per_cell / umi_per_locus = 500 / 100 = 5x
   
   # Read parameters (10x Chromium v3)
-  read_length: 150       # bp
+  read_length: 100      # bp
   
   # Cell barcode parameters (10x v3)
   cb_length: 16          # Cell barcode length
@@ -52,14 +52,16 @@ simulation:
 # TE Selection Criteria (for 01_select_te_loci.R)
 # ==============================================================================
 te_selection:
-  # Target TE families (most expressed in real data)
+  # Target TE families — restricted to LINE/SINE only.
+  # LTR (ERVL-MaLR) and DNA transposons (hAT-Charlie) excluded:
+  # LTRs have no genomically encoded poly-A (ends in LTR sequence);
+  # DNA transposons have TIRs, not poly-A, and no mRNA intermediate.
+  # Only LINE/SINE are captured by oligo-dT in 3' scRNA-seq.
   families:
     - Alu          # SINE
     - L1           # LINE
     - L2           # LINE
     - MIR          # SINE
-    - ERVL-MaLR    # LTR
-    - hAT-Charlie  # DNA transposon
   
   # Selection criteria for well-separated TEs
   min_distance_between_loci: 100000  # bp, avoid nearby TEs
