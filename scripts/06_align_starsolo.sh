@@ -97,6 +97,43 @@ echo "This will take 5-15 minutes depending on dataset size..."
 echo "Started: $(date)"
 echo ""
 
+# STARsolo parameter reference:
+#
+#  General:
+#   --runThreadN               number of parallel threads
+#   --genomeDir                pre-built STAR genome index directory
+#   --readFilesCommand zcat    decompress gzipped FASTQs on the fly
+#   --readFilesIn R2 R1        R2 first (cDNA), R1 second (CB+UMI) — STARsolo convention
+#
+#  10x barcode / UMI:
+#   --soloType CB_UMI_Simple   10x Chromium v2/v3: fixed-position CB and UMI on R1
+#   --soloCBwhitelist          list of valid cell barcodes to match against
+#   --soloCBstart              R1 position where cell barcode starts (1-based; = 1)
+#   --soloCBlen                cell barcode length in bp (10x v3 = 16)
+#   --soloUMIstart             R1 position where UMI starts (= CB_START + CB_LEN = 17)
+#   --soloUMIlen               UMI length in bp (10x v3 = 12)
+#   --soloBarcodeReadLength 0  do not enforce R1 length check (R1 is CB+UMI only, 28bp)
+#
+#  Quantification:
+#   --soloFeatures Gene                         quantify at gene level (soloTE re-quantifies at TE level post-hoc)
+#   --soloCBmatchWLtype 1MM_multi_Nbase_...     allow 1 mismatch in CB; resolve ambiguous matches with pseudocounts (Cell Ranger default)
+#   --soloUMIfiltering MultiGeneUMI_CR          discard UMIs mapping to >1 gene (Cell Ranger method)
+#   --soloUMIdedup 1MM_CR                       collapse UMIs with 1 mismatch using directional method (Cell Ranger default)
+#
+#  BAM output:
+#   --outSAMattributes NH HI AS nM CR CY UR UY CB UB GX GN
+#                              NH=hit count, HI=hit index, CR/CY=raw CB+qual, UR/UY=raw UMI+qual,
+#                              CB/UB=corrected CB/UMI, GX/GN=gene ID/name
+#   --outSAMtype BAM SortedByCoordinate   coordinate-sorted BAM (required by soloTE)
+#   --outFileNamePrefix ./     write all output to current working directory
+#   --limitBAMsortRAM          max RAM for BAM sorting in bytes (30 GB)
+#
+#  Multi-mapper handling (critical for repetitive TEs):
+#   --outFilterMultimapNmax 100   keep reads mapping to up to 100 loci
+#   --winAnchorMultimapNmax 100   max loci for anchor seeds (must match outFilterMultimapNmax)
+#   --outSAMmultNmax 1            write only 1 alignment per multi-mapping read to BAM
+#   --outMultimapperOrder Random  choose which alignment to output for multi-mappers at random
+#   --runRNGseed                  random seed for reproducibility of multi-mapper selection
 STAR \
     --runThreadN "$THREADS" \
     --genomeDir "$REPO_ROOT/$STAR_INDEX" \
@@ -126,6 +163,17 @@ STAR \
 echo ""
 echo "✓ STARsolo alignment complete"
 echo "Finished: $(date)"
+echo ""
+
+# Convert BAM to SAM so both formats are available for inspection.
+# BAM is kept for downstream tools (soloTE, samtools, IGV);
+# SAM is human-readable for manual inspection.
+echo "Converting BAM to SAM..."
+samtools view -h Aligned.sortedByCoord.out.bam > Aligned.sortedByCoord.out.sam
+sam_size=$(du -sh Aligned.sortedByCoord.out.sam | cut -f1)
+bam_size=$(du -sh Aligned.sortedByCoord.out.bam | cut -f1)
+echo "  BAM: $bam_size   SAM: $sam_size"
+echo "✓ SAM written"
 echo ""
 
 cd "$REPO_ROOT"
