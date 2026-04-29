@@ -26,17 +26,15 @@ simulation:
   # Number of TE loci to include in ground truth
   n_te_loci: 50
   
-  # Sequencing depth
-  reads_per_cell: 50  # Total reads per cell
-  
-  # Expression level — set independently of sequencing depth.
-  # Represents captured RNA molecules per locus per cell.
+  # Expression level — unique RNA molecules captured per locus per cell (UMIs).
   # In a real experiment this would be estimated empirically.
   umi_per_locus: 1
 
-  # DERIVED (informational) — do not set manually.
-  # reads_per_locus_per_cell = reads_per_cell / n_te_loci = 50000 / 100 = 500
-  # pcr_duplication_rate     = reads_per_locus_per_cell / umi_per_locus = 500 / 100 = 5x
+  # Sequencing depth.
+  # reads_per_cell = umi_per_locus × n_te_loci × pcr_duplication_rate
+  # At current settings: 1 × 50 × 1 = 50 (1x duplication — each UMI sequenced once).
+  # Increase the multiplier to simulate PCR duplication (e.g., ×3 → 150 reads/cell).
+  reads_per_cell: 50
   
   # Read parameters (10x Chromium v3)
   read_length: 100      # bp
