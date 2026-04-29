@@ -20,8 +20,29 @@ library(knitr)
 library(kableExtra)
 library(dplyr)
 
-# Data lives in results/ relative to this Rmd file
 data_dir <- file.path(dirname(knitr::current_input(dir = TRUE)), "results")
+
+# Pre-load totals used in captions and the data guide
+.t1   <- read.delim(file.path(data_dir, "t1_class_counts.tsv"))
+.hg38_total   <- .t1$hg38_n[.t1$class  == "Total"]
+.chm13_total  <- .t1$chm13_n[.t1$class == "Total"]
+.hg38_sine_n  <- .t1$hg38_n[.t1$class  == "SINE"]
+.chm13_sine_n <- .t1$chm13_n[.t1$class == "SINE"]
+.hg38_line_n  <- .t1$hg38_n[.t1$class  == "LINE"]
+.chm13_line_n <- .t1$chm13_n[.t1$class == "LINE"]
+
+.t6              <- read.delim(file.path(data_dir, "t6_liftover_both.tsv"))
+.hg38_unmap_all  <- .t6$unmapped[1]
+.chm13_unmap_all <- .t6$unmapped[2]
+
+.t9              <- read.delim(file.path(data_dir, "t9_linesine_comparison.tsv"))
+.hg38_ls_total   <- .t9$source_linesine_total[1]
+.chm13_ls_total  <- .t9$source_linesine_total[2]
+
+.t5    <- read.delim(file.path(data_dir, "t5_alu_age.tsv"))
+.tot5  <- .t5[.t5$age_group == "Total", ]
+
+N <- function(n) format(n, big.mark = ",", scientific = FALSE)
 
 kt <- function(df, caption = NULL, ...) {
   kable(df, caption = caption, format.args = list(big.mark = ","),
@@ -35,6 +56,90 @@ kt <- function(df, caption = NULL, ...) {
 > **Motivation:** Are there more assembly-specific TE loci in hg38 than in T2T-CHM13?
 > And are young, recently-mobile Alu elements disproportionately absent from
 > the other assembly — evidence that they lack stable genomic addresses across individuals?
+
+---
+
+# Data Sources & Table Guide {#data-sources}
+
+## Input files
+
+Two RepeatMasker annotation files were used throughout this analysis.
+Every table in this report is derived from one or both of them.
+
+| File | Assembly | Format | Size | Origin |
+|------|----------|--------|------|--------|
+| `hg38_rmsk.txt.gz` | hg38 (GRCh38) | UCSC rmsk.txt | 149 MB compressed | UCSC Genome Browser, Oct 2022 |
+| `T2T-CHM13v2.0_RepeatMasker.bed` | T2T-CHM13v2.0 (hs1) | BED | 327 MB uncompressed | project `references/annotations/` |
+
+The hg38 file was downloaded specifically for this analysis and is stored in
+`analysis/liftover/data/`. The CHM13 file was already in the project repository
+(used by the SoloTE pipeline) and was **not** re-downloaded.
+
+## Table guide: what each table shows and how percentages are calculated
+
+```{r guide-table}
+guide <- data.frame(
+  Table = c(
+    "Table 1",
+    "Table 2",
+    "Table 3",
+    "Table 6",
+    "Table 4a",
+    "Table 4b",
+    "Table 7",
+    "Table 8",
+    "Table 9",
+    "Table 5"
+  ),
+  `Source file(s)` = c(
+    "both files",
+    "both files",
+    "both files",
+    "hg38 file (row 1); CHM13 file (row 2)",
+    "hg38 file",
+    "hg38 file",
+    "CHM13 file",
+    "CHM13 file",
+    "both files",
+    "hg38 file (background); liftover outputs (unmapped sets)"
+  ),
+  `Denominator (n=)` = c(
+    paste0("hg38: ", N(.hg38_total), "; CHM13: ", N(.chm13_total)),
+    paste0("hg38 SINEs: ", N(.hg38_sine_n), "; CHM13 SINEs: ", N(.chm13_sine_n)),
+    paste0("hg38 LINEs: ", N(.hg38_line_n), "; CHM13 LINEs: ", N(.chm13_line_n)),
+    paste0("hg38: ", N(.hg38_total), "; CHM13: ", N(.chm13_total)),
+    paste0(N(.hg38_unmap_all), " hg38-specific unmapped loci"),
+    paste0("top 20 of ", N(.hg38_unmap_all), " hg38-specific unmapped"),
+    paste0(N(.chm13_unmap_all), " CHM13-specific unmapped loci"),
+    paste0("top 20 of ", N(.chm13_unmap_all), " CHM13-specific unmapped"),
+    paste0("hg38 LINE/SINE: ", N(.hg38_ls_total), "; CHM13 LINE/SINE: ", N(.chm13_ls_total)),
+    paste0("hg38 Alu bg: ", N(.tot5$hg38_bg_n),
+           "; hg38-specific Alus: ", N(.tot5$hg38_unmap_n),
+           "; CHM13-specific Alus: ", N(.tot5$chm13_unmap_n))
+  ),
+  `% column means` = c(
+    "fraction of all annotations in that assembly",
+    "fraction of all SINEs in that assembly",
+    "fraction of all LINEs in that assembly",
+    "fraction of source loci that failed liftover",
+    "col 3: fraction of 58,933 unmapped; col 4: fraction of all hg38 loci in that class",
+    "fraction of all 58,933 hg38-specific unmapped loci",
+    "col 3: fraction of 89,234 unmapped; col 4: fraction of all CHM13 loci in that class",
+    "fraction of all 89,234 CHM13-specific unmapped loci",
+    "fraction of source LINE/SINE loci that failed liftover",
+    "each % column is independent: fraction within that column's total"
+  ),
+  check.names = FALSE
+)
+
+kable(guide, caption = "Table guide — data sources and percentage denominators",
+      align = c("l", "l", "l", "l")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "bordered"),
+                full_width = TRUE, position = "left") %>%
+  column_spec(1, bold = TRUE, width = "6em") %>%
+  column_spec(3, width = "22em") %>%
+  column_spec(4, width = "26em")
+```
 
 ---
 
@@ -58,13 +163,14 @@ which CHM13 blocks. Two chain files were used here:
 
 ## What does "hg38 → CHM13" mean?
 
-The direction **hg38 → CHM13** means: take each locus annotated in hg38 and ask
-whether it has a syntenic counterpart in CHM13 coordinate space.
+The direction **hg38 → CHM13** means: take each locus annotated in the hg38 file
+(`hg38_rmsk.txt.gz`) and ask whether it has a syntenic counterpart in CHM13
+coordinate space.
 
 - **Mapped** → the locus has a defined syntenic position in CHM13. It exists in
   both assemblies (though possibly at a slightly different coordinate).
 - **Unmapped** → the locus has **no unambiguous syntenic counterpart** in CHM13.
-  Unmapped covers two distinct situations:
+  Unmapped covers three distinct situations:
   1. *True absence* — the sequence genuinely does not exist in the CHM13 individual's
      genome (a polymorphic insertion absent from CHM13).
   2. *Assembly difference* — the region is collapsed, duplicated, or resolved
@@ -78,30 +184,34 @@ whether it has a syntenic counterpart in CHM13 coordinate space.
 ## Why run both directions?
 
 Running hg38 → CHM13 and CHM13 → hg38 independently gives two distinct
-"assembly-specific" sets:
+assembly-specific sets. Each uses a different source file:
 
-| Direction | Unmapped set | Interpretation |
-|-----------|--------------|----------------|
-| hg38 → CHM13 | hg38-specific loci | Present in hg38 but absent/unresolved in CHM13 |
-| CHM13 → hg38 | CHM13-specific loci | Present in CHM13 but absent/unresolved in hg38 |
+| Direction | Source file | Unmapped set |
+|-----------|-------------|--------------|
+| hg38 → CHM13 | `hg38_rmsk.txt.gz` | hg38-specific loci — present in hg38 but absent/unresolved in CHM13 |
+| CHM13 → hg38 | `T2T-CHM13v2.0_RepeatMasker.bed` | CHM13-specific loci — present in CHM13 but absent/unresolved in hg38 |
 
 These sets are **not mirror images**. They differ because the two assemblies have
 different overall structures: T2T-CHM13 resolves centromeres and other difficult
-regions that are collapsed in hg38, while hg38 may contain some sequences absent
-from the single CHM13 individual.
+regions that are collapsed in hg38, while hg38 may contain sequences absent from
+the single CHM13 individual.
 
 ---
 
 # Total RepeatMasker Annotations {#total}
 
-hg38 and T2T-CHM13v2.0 RepeatMasker annotations across all repeat classes.
+**Source:** both files. Percentages are the fraction of all annotations
+in that assembly (`hg38 %` = count / `r N(.hg38_total)` total hg38 loci;
+`CHM13 %` = count / `r N(.chm13_total)` total CHM13 loci).
 
 ```{r table1}
 t1 <- read.delim(file.path(data_dir, "t1_class_counts.tsv"))
 t1 <- t1 %>%
   mutate(
-    hg38_pct  = ifelse(class == "Total", "100%", paste0(round(hg38_n  / hg38_n[class=="Total"]  * 100, 1), "%")),
-    chm13_pct = ifelse(class == "Total", "100%", paste0(round(chm13_n / chm13_n[class=="Total"] * 100, 1), "%"))
+    hg38_pct  = ifelse(class == "Total", "100%",
+                  paste0(round(hg38_n  / .hg38_total  * 100, 1), "%")),
+    chm13_pct = ifelse(class == "Total", "100%",
+                  paste0(round(chm13_n / .chm13_total * 100, 1), "%"))
   ) %>%
   select(Class = class,
          `hg38 count` = hg38_n,
@@ -109,32 +219,47 @@ t1 <- t1 %>%
          `CHM13 count` = chm13_n,
          `CHM13 %` = chm13_pct)
 
-kt(t1, caption = "Table 1. Total TE annotations by class")
+kt(t1, caption = paste0(
+  "Table 1. Total TE annotations by class  ",
+  "(hg38 n = ", N(.hg38_total), ";  CHM13 n = ", N(.chm13_total), ")"
+))
 ```
 
 ---
 
 # SINE and LINE Family Breakdown {#families}
 
+**Source:** both files. The hg38 counts come from `hg38_rmsk.txt.gz`
+(`r N(.hg38_total)` total annotations) and the CHM13 counts come from
+`T2T-CHM13v2.0_RepeatMasker.bed` (`r N(.chm13_total)` total annotations).
+These two files were obtained independently and are not derived from one another.
+Percentages within each table are the fraction of that assembly's loci
+in the corresponding class (i.e. hg38 SINE % = count / `r N(.hg38_sine_n)`
+total hg38 SINEs).
+
 ## SINE Families
 
 ```{r table2}
 t2 <- read.delim(file.path(data_dir, "t2_sine_families.tsv"))
-total_row <- t2[t2$family == "Total", ]
+total_row2 <- t2[t2$family == "Total", ]
 t2 <- t2 %>%
   mutate(
     hg38_pct  = ifelse(family == "Total", "100%",
-                  paste0(round(hg38_n  / total_row$hg38_n  * 100, 1), "%")),
+                  paste0(round(hg38_n  / total_row2$hg38_n  * 100, 1), "%")),
     chm13_pct = ifelse(family == "Total", "100%",
-                  paste0(round(chm13_n / total_row$chm13_n * 100, 1), "%"))
+                  paste0(round(chm13_n / total_row2$chm13_n * 100, 1), "%"))
   ) %>%
   select(Family = family,
          `hg38 count` = hg38_n,
-         `hg38 %` = hg38_pct,
+         `hg38 % of SINEs` = hg38_pct,
          `CHM13 count` = chm13_n,
-         `CHM13 %` = chm13_pct)
+         `CHM13 % of SINEs` = chm13_pct)
 
-kt(t2, caption = "Table 2. SINE family breakdown")
+kt(t2, caption = paste0(
+  "Table 2. SINE family breakdown  ",
+  "(hg38 total SINEs n = ", N(.hg38_sine_n),
+  ";  CHM13 total SINEs n = ", N(.chm13_sine_n), ")"
+))
 ```
 
 ## LINE Families
@@ -151,11 +276,15 @@ t3 <- t3 %>%
   ) %>%
   select(Family = family,
          `hg38 count` = hg38_n,
-         `hg38 %` = hg38_pct,
+         `hg38 % of LINEs` = hg38_pct,
          `CHM13 count` = chm13_n,
-         `CHM13 %` = chm13_pct)
+         `CHM13 % of LINEs` = chm13_pct)
 
-kt(t3, caption = "Table 3. LINE family breakdown")
+kt(t3, caption = paste0(
+  "Table 3. LINE family breakdown  ",
+  "(hg38 total LINEs n = ", N(.hg38_line_n),
+  ";  CHM13 total LINEs n = ", N(.chm13_line_n), ")"
+))
 ```
 
 ---
@@ -163,6 +292,10 @@ kt(t3, caption = "Table 3. LINE family breakdown")
 # Liftover Results {#liftover}
 
 ## Summary: Both Directions {#both-directions}
+
+**Source:** hg38 → CHM13 row uses `hg38_rmsk.txt.gz`; CHM13 → hg38 row
+uses `T2T-CHM13v2.0_RepeatMasker.bed`. Percentages are the fraction of
+source loci that failed liftover.
 
 ```{r table6}
 t6 <- read.delim(file.path(data_dir, "t6_liftover_both.tsv"))
@@ -172,13 +305,18 @@ t6_out <- t6 %>%
     unmapped_pct = paste0(round(unmapped / source_total * 100, 1), "%")
   ) %>%
   select(Direction = direction,
-         `Source loci` = source_total,
+         `Source loci (n)` = source_total,
          `Mapped` = mapped,
          `Mapped %` = mapped_pct,
          `Unmapped (assembly-specific)` = unmapped,
          `Unmapped %` = unmapped_pct)
 
-kable(t6_out, caption = "Table 6. Liftover summary — both directions",
+kable(t6_out,
+      caption = paste0(
+        "Table 6. Liftover summary — both directions  ",
+        "(hg38 source n = ", N(.hg38_total),
+        ";  CHM13 source n = ", N(.chm13_total), ")"
+      ),
       format.args = list(big.mark = ","),
       align = c("l", "r", "r", "r", "r", "r")) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "bordered"),
@@ -186,14 +324,16 @@ kable(t6_out, caption = "Table 6. Liftover summary — both directions",
   row_spec(2, bold = TRUE, color = "white", background = "#8e44ad")
 ```
 
-> **CHM13 has more total unmapped loci (89,234 vs 58,933)**, but this is almost entirely
+> **CHM13 has more total unmapped loci (`r N(.chm13_unmap_all)` vs `r N(.hg38_unmap_all)`)**, but this is almost entirely
 > driven by Satellite repeats in centromeres newly resolved by T2T sequencing —
 > not by mobile TE insertions. For LINE/SINE elements specifically, hg38 has
-> **2.7× more** assembly-specific loci than CHM13 (see Section 4.4).
+> **2.7× more** assembly-specific loci than CHM13 (see Section 5.5).
 
 ## hg38 → CHM13: Unmapped by Class {#hg38-unmapped-class}
 
-These are loci annotated in hg38 with no syntenic counterpart in CHM13.
+**Source:** `hg38_rmsk.txt.gz`. The `% of unmapped` column is the fraction of
+the `r N(.hg38_unmap_all)` total hg38-specific loci; the `% of hg38 class total`
+column is the fraction of all hg38 loci in that class that failed liftover.
 
 ```{r table4a}
 t4a <- read.delim(file.path(data_dir, "t4a_unmapped_by_class.tsv"))
@@ -208,19 +348,29 @@ t4a <- t4a %>%
          `% of unmapped`,
          `% of hg38 class total`)
 
-kt(t4a, caption = "Table 4a. hg38-specific unmapped elements by class")
+kt(t4a, caption = paste0(
+  "Table 4a. hg38-specific unmapped elements by class  ",
+  "(n = ", N(.hg38_unmap_all), " hg38-specific loci total)"
+))
 ```
 
 ## hg38 → CHM13: Top 20 Unmapped Subfamilies {#hg38-top-subfam}
+
+**Source:** `hg38_rmsk.txt.gz`. Percentages are the fraction of all
+`r N(.hg38_unmap_all)` hg38-specific unmapped loci.
 
 ```{r table4b}
 t4b <- read.delim(file.path(data_dir, "t4b_top_subfamilies.tsv"))
 total_unmap_all <- sum(t4b$count)
 t4b <- t4b %>%
-  mutate(`% of unmapped` = paste0(round(count / total_unmap_all * 100, 1), "%")) %>%
-  select(Subfamily = subfamily, Count = count, `% of unmapped`)
+  mutate(`% of hg38-specific unmapped` = paste0(round(count / .hg38_unmap_all * 100, 1), "%")) %>%
+  select(Subfamily = subfamily, Count = count, `% of hg38-specific unmapped`)
 
-kable(t4b, caption = "Table 4b. Top 20 hg38-specific (unmapped) subfamilies",
+kable(t4b,
+      caption = paste0(
+        "Table 4b. Top 20 hg38-specific (unmapped) subfamilies  ",
+        "(top 20 of ", N(.hg38_unmap_all), " total hg38-specific loci)"
+      ),
       format.args = list(big.mark = ","),
       align = c("l", "r", "r")) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "bordered"),
@@ -229,9 +379,11 @@ kable(t4b, caption = "Table 4b. Top 20 hg38-specific (unmapped) subfamilies",
 
 ## CHM13 → hg38: Unmapped by Class {#chm13-unmapped-class}
 
-These are loci annotated in CHM13 with no syntenic counterpart in hg38.
-Note that **Satellite** and **Simple_repeat** classes dominate — these are
-centromeric and pericentromeric repeats that T2T resolved for the first time
+**Source:** `T2T-CHM13v2.0_RepeatMasker.bed`. The `% of unmapped` column is
+the fraction of the `r N(.chm13_unmap_all)` total CHM13-specific loci;
+the `% of CHM13 class total` column is the fraction of all CHM13 loci in
+that class that failed liftover. Note that **Satellite** and **Simple_repeat**
+classes dominate — centromeric repeats that T2T resolved for the first time
 but that exist in hg38 only as collapsed or absent sequence.
 
 ```{r table7}
@@ -247,7 +399,11 @@ t7_out <- t7 %>%
          `% of unmapped`,
          `% of CHM13 class total`)
 
-kable(t7_out, caption = "Table 7. CHM13-specific unmapped elements by class",
+kable(t7_out,
+      caption = paste0(
+        "Table 7. CHM13-specific unmapped elements by class  ",
+        "(n = ", N(.chm13_unmap_all), " CHM13-specific loci total)"
+      ),
       format.args = list(big.mark = ","),
       align = c("l", "r", "r", "r")) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "bordered"),
@@ -258,14 +414,20 @@ kable(t7_out, caption = "Table 7. CHM13-specific unmapped elements by class",
 
 ## CHM13 → hg38: Top 20 Unmapped Subfamilies {#chm13-top-subfam}
 
+**Source:** `T2T-CHM13v2.0_RepeatMasker.bed`. Percentages are the fraction
+of all `r N(.chm13_unmap_all)` CHM13-specific unmapped loci.
+
 ```{r table8}
 t8 <- read.delim(file.path(data_dir, "t8_chm13_top_subfamilies.tsv"))
-total_unmap8 <- sum(t8$count)
 t8_out <- t8 %>%
-  mutate(`% of unmapped` = paste0(round(count / total_unmap8 * 100, 1), "%")) %>%
-  select(Subfamily = subfamily, Count = count, `% of unmapped`)
+  mutate(`% of CHM13-specific unmapped` = paste0(round(count / .chm13_unmap_all * 100, 1), "%")) %>%
+  select(Subfamily = subfamily, Count = count, `% of CHM13-specific unmapped`)
 
-kable(t8_out, caption = "Table 8. Top 20 CHM13-specific (unmapped) subfamilies",
+kable(t8_out,
+      caption = paste0(
+        "Table 8. Top 20 CHM13-specific (unmapped) subfamilies  ",
+        "(top 20 of ", N(.chm13_unmap_all), " total CHM13-specific loci)"
+      ),
       format.args = list(big.mark = ","),
       align = c("l", "r", "r")) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "bordered"),
@@ -279,26 +441,31 @@ kable(t8_out, caption = "Table 8. Top 20 CHM13-specific (unmapped) subfamilies",
 
 ## LINE/SINE-Specific Comparison {#linesine-comparison}
 
-Restricting to LINE and SINE elements removes the satellite/centromere signal
-and isolates the biologically relevant TE-insertion comparison.
+**Source:** LINE/SINE loci from `hg38_rmsk.txt.gz` (hg38 row) and from
+`T2T-CHM13v2.0_RepeatMasker.bed` (CHM13 row). Percentages are the fraction
+of source LINE/SINE loci that failed liftover. Restricting to LINE and SINE
+removes the satellite/centromere signal and isolates the biologically relevant
+TE-insertion comparison.
 
 ```{r table9}
 t9 <- read.delim(file.path(data_dir, "t9_linesine_comparison.tsv"))
 t9_out <- t9 %>%
   mutate(
     unmapped_pct_fmt = paste0(round(unmapped_pct, 2), "%"),
-    fold = c(
-      round(t9$unmapped_pct[1] / t9$unmapped_pct[2], 1),
-      1.0
-    )
+    fold = c(round(t9$unmapped_pct[1] / t9$unmapped_pct[2], 1), 1.0)
   ) %>%
   select(Direction = direction,
-         `Source LINE/SINE loci` = source_linesine_total,
+         `Source LINE/SINE loci (n)` = source_linesine_total,
          `Unmapped (assembly-specific)` = unmapped_linesine,
-         `% unmapped` = unmapped_pct_fmt,
+         `% of source LINE/SINE` = unmapped_pct_fmt,
          `Fold vs CHM13` = fold)
 
-kable(t9_out, caption = "Table 9. LINE/SINE-only assembly-specific comparison",
+kable(t9_out,
+      caption = paste0(
+        "Table 9. LINE/SINE-only assembly-specific comparison  ",
+        "(hg38 LINE/SINE n = ", N(.hg38_ls_total),
+        ";  CHM13 LINE/SINE n = ", N(.chm13_ls_total), ")"
+      ),
       format.args = list(big.mark = ","),
       align = c("l", "r", "r", "r", "r")) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "bordered"),
@@ -314,6 +481,11 @@ kable(t9_out, caption = "Table 9. LINE/SINE-only assembly-specific comparison",
 ---
 
 # Young vs. Old Alu — The Key Finding {#alu-age}
+
+**Source:** hg38 background Alu counts from `hg38_rmsk.txt.gz`; unmapped Alu
+sets from the liftover outputs (hg38-specific from hg38→CHM13; CHM13-specific
+from CHM13→hg38). Percentages within each column are independent: each column
+sums to 100% over its own total.
 
 Among Alu elements that failed liftover, **young AluY subfamilies are massively
 over-represented** in the CHM13-specific set relative to the hg38 background.
@@ -344,17 +516,22 @@ t5_display <- bind_rows(t5_display, total_row)
 
 t5_out <- t5_display %>%
   select(
-    `Alu age group`                              = age_group,
-    `hg38 background\nn = 1,228,449`            = hg38_bg_n,
-    ` `                                          = hg38_bg_pct,
-    `hg38-specific unmapped\nn = 14,531`         = hg38_unmap_n,
-    `  `                                         = hg38_unmap_pct,
-    `CHM13-specific unmapped\nn = 10,068`        = chm13_unmap_n,
-    `   `                                        = chm13_unmap_pct
+    `Alu age group`                                         = age_group,
+    `hg38 background\nn = 1,228,449`                       = hg38_bg_n,
+    ` `                                                     = hg38_bg_pct,
+    `hg38-specific unmapped\nn = 14,531`                   = hg38_unmap_n,
+    `  `                                                    = hg38_unmap_pct,
+    `CHM13-specific unmapped\nn = 10,068`                  = chm13_unmap_n,
+    `   `                                                   = chm13_unmap_pct
   )
 
 kable(t5_out,
-      caption = "Table 5. Young vs. old Alu in assembly-specific unmapped sets vs. hg38 background",
+      caption = paste0(
+        "Table 5. Young vs. old Alu — assembly-specific unmapped vs. hg38 background  ",
+        "(hg38 Alu background n = ", N(totals$hg38_bg_n),
+        ";  hg38-specific Alus n = ", N(totals$hg38_unmap_n),
+        ";  CHM13-specific Alus n = ", N(totals$chm13_unmap_n), ")"
+      ),
       format.args = list(big.mark = ","),
       align = c("l", "r", "r", "r", "r", "r", "r")) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "bordered"),
@@ -369,7 +546,7 @@ kable(t5_out,
   footnote(general = paste0(
     "AluY* = young Alu subfamilies (~1-5 Mya, still occasionally retrotransposing). ",
     "AluS* = intermediate (~5-20 Mya). AluJ* = oldest (~20-65 Mya, universally fixed). ",
-    "CHM13-specific unmapped from CHM13→hg38 liftover."
+    "CHM13-specific unmapped set derived from CHM13→hg38 liftover."
   ))
 ```
 
