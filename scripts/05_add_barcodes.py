@@ -245,21 +245,11 @@ with gzip.open(r1_output, 'wt') as r1_out, \
             umi = random.choice(cell_umis[current_cell_idx][locus_id])
             umi_usage_counter[current_cell_idx][locus_id] += 1
         
-        # Create new R1 read: [Cell Barcode][UMI][original R1 seq (truncated)]
-        # Prepend CB+UMI to R1, truncate original sequence to maintain read length
-        # Note: With 50bp simulated reads, final R1 will be ~78bp (28bp barcode+UMI + 50bp seq)
-        barcode_umi = cell_barcode + umi
-        barcode_umi_qual = 'I' * len(barcode_umi)  # High quality scores for barcodes
-        
-        # Truncate original R1 sequence to fit target length (or use all if shorter)
-        target_r1_len = 150  # Target final R1 length (for 150bp simulated reads)
-        max_original_len = target_r1_len - len(barcode_umi)
-        r1_seq_truncated = r1_seq[:max_original_len]
-        r1_qual_truncated = r1_qual[:max_original_len]
-        
-        # New R1: barcode+UMI+truncated original
-        new_r1_seq = barcode_umi + r1_seq_truncated
-        new_r1_qual = barcode_umi_qual + r1_qual_truncated
+        # 10x 3' chemistry: R1 contains ONLY the cell barcode + UMI (28bp).
+        # No cDNA sequence is appended — STARsolo reads CB from pos 1-16
+        # and UMI from pos 17-28 and ignores anything beyond that.
+        new_r1_seq = cell_barcode + umi
+        new_r1_qual = 'I' * len(new_r1_seq)
         
         # Write R1 (with barcodes)
         write_fastq_record(r1_out, r1_header, new_r1_seq, new_r1_qual)
@@ -318,10 +308,9 @@ with gzip.open(r1_output, 'rt') as f:
     header = f.readline().strip()
     seq = f.readline().strip()
     
-    print(f"    Read length: {len(seq)}bp")
-    print(f"    First 28bp (CB): {seq[:16]}")
-    print(f"    Next 12bp (UMI): {seq[16:28]}")
-    print(f"    Remaining: {seq[28:48]}...")
+    print(f"    Read length: {len(seq)}bp (CB+UMI only — no cDNA)")
+    print(f"    Cell barcode (1-16): {seq[:16]}")
+    print(f"    UMI (17-28):         {seq[16:28]}")
 
 print()
 

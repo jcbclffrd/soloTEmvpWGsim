@@ -96,7 +96,7 @@ STEPS=(
     "01_select_te_loci.R|Select TE loci from RepeatMasker"
     "02_extract_sequences.sh|Extract TE sequences from genome"
     "03_create_expression_profile.R|Create expression profile"
-    "04_simulate_reads.sh|Simulate RNA-seq reads"
+    "04_simulate_reads.py|Simulate 3' scRNA-seq reads"
     "05_add_barcodes.py|Add 10x cell barcodes and UMIs"
     "06_align_starsolo.sh|Align reads with STARsolo"
     "07_run_solote.sh|Run soloTE quantification"
