@@ -63,7 +63,7 @@ te_selection:
   
   # Selection criteria for well-separated TEs
   min_distance_between_loci: 100000  # bp, avoid nearby TEs
-  min_te_length: 200                  # bp
+  min_te_length: 200                  # bp — must be > read_length + 50 (fragment size)
   max_te_length: 6000                 # bp
   
   # Chromosome filter (avoid unplaced/alt contigs)

@@ -219,9 +219,15 @@ if (nrow(matched_loci) > 0) {
   message("Count Accuracy (for matched loci):")
   message("")
   
-  # Extract counts for matched loci
-  observed_counts <- observed_matrix[matched_loci$feature_name, , drop = FALSE]
-  expected_counts <- expected_matrix[matched_loci$locus_id, , drop = FALSE]
+  # Deduplicate: keep one feature per ground truth locus to ensure aligned matrices
+  matched_loci_unique <- matched_loci %>% distinct(locus_id, .keep_all = TRUE)
+
+  # Align cells: soloTE drops cells with zero counts; restrict expected to same cells
+  shared_cells <- intersect(colnames(observed_matrix), colnames(expected_matrix))
+
+  # Extract counts for matched loci, same cells only
+  observed_counts <- observed_matrix[matched_loci_unique$feature_name, shared_cells, drop = FALSE]
+  expected_counts <- expected_matrix[matched_loci_unique$locus_id,     shared_cells, drop = FALSE]
   
   # Flatten to vectors for correlation
   observed_vec <- as.vector(observed_counts)
@@ -247,8 +253,8 @@ if (nrow(matched_loci) > 0) {
   
   # Per-locus summary
   per_locus_accuracy <- tibble(
-    locus_id = matched_loci$locus_id,
-    feature_name = matched_loci$feature_name,
+    locus_id = matched_loci_unique$locus_id,
+    feature_name = matched_loci_unique$feature_name,
     expected_total = rowSums(expected_counts),
     observed_total = rowSums(observed_counts),
     difference = observed_total - expected_total,

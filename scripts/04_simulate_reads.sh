@@ -40,6 +40,13 @@ N_CELLS=$(grep "n_cells:" config.yaml | awk '{print $2}')
 READS_PER_CELL=$(grep "reads_per_cell:" config.yaml | awk '{print $2}')
 RANDOM_SEED=$(grep "random_seed:" config.yaml | awk '{print $2}')
 
+# Derived wgsim parameters
+# Fragment outer distance = read_length + 50bp insert.
+# Overlapping paired reads (fragment < 2*read_length) are valid and common for
+# short TEs. The key constraint is fragment_size <= TE length (min_te_length in config).
+FRAGMENT_SIZE=$((READ_LENGTH + 50))
+FRAGMENT_SD=20
+
 # Calculate total reads
 TOTAL_READS=$((N_CELLS * READS_PER_CELL))
 
@@ -74,30 +81,31 @@ mkdir -p "$OUTPUT_DIR"
 echo "Simulating reads with wgsim..."
 echo ""
 echo "Parameters:"
-echo "  -e 0.001    # Base error rate (0.1%)"
-echo "  -r 0.0      # Mutation rate (0% - perfect matches)"
-echo "  -R 0.0      # Indel fraction (0% - no indels)"
-echo "  -1 $READ_LENGTH  # Read 1 length"
-echo "  -2 $READ_LENGTH  # Read 2 length"
-echo "  -N $TOTAL_READS  # Number of read pairs"
-echo "  -S $RANDOM_SEED  # Random seed"
+echo "  -e 0.001              # Base error rate (0.1%)"
+echo "  -r 0.0                # Mutation rate (0% - perfect matches)"
+echo "  -R 0.0                # Indel fraction (0% - no indels)"
+echo "  -1 $READ_LENGTH       # Read 1 length"
+echo "  -2 $READ_LENGTH       # Read 2 length"
+echo "  -d $FRAGMENT_SIZE     # Fragment outer distance (= read_length + 50bp insert)"
+echo "  -s $FRAGMENT_SD       # Fragment size std dev"
+echo "  -N $TOTAL_READS       # Number of read pairs"
+echo "  -S $RANDOM_SEED       # Random seed"
 echo ""
 echo "This may take a few minutes..."
 echo "Started: $(date)"
 echo ""
 
 # Run wgsim
-# Note: Reduced fragment size to fit short TEs (200-400 bp)
-# For TEs ~200-400 bp, use: 50bp reads + 100bp insert = 200bp fragments
-# This ensures most TEs can generate reads
+# Fragment size is derived: 2 * read_length + 50bp insert.
+# min_te_length in config should be > fragment_size for reliable read generation.
 wgsim \
     -e 0.001 \
     -r 0.0 \
     -R 0.0 \
-    -1 50 \
-    -2 50 \
-    -d 100 \
-    -s 20 \
+    -1 "$READ_LENGTH" \
+    -2 "$READ_LENGTH" \
+    -d "$FRAGMENT_SIZE" \
+    -s "$FRAGMENT_SD" \
     -N $TOTAL_READS \
     -S $RANDOM_SEED \
     "$TRANSCRIPTOME" \

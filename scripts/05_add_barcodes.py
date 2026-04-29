@@ -44,6 +44,7 @@ with open("config.yaml") as f:
 
 CB_LENGTH = config["simulation"]["cb_length"]
 UMI_LENGTH = config["simulation"]["umi_length"]
+READ_LENGTH = config["simulation"]["read_length"]
 N_CELLS = config["simulation"]["n_cells"]
 READS_PER_CELL = config["simulation"]["reads_per_cell"]
 RANDOM_SEED = config["simulation"]["random_seed"]
@@ -246,13 +247,12 @@ with gzip.open(r1_output, 'wt') as r1_out, \
             umi_usage_counter[current_cell_idx][locus_id] += 1
         
         # Create new R1 read: [Cell Barcode][UMI][original R1 seq (truncated)]
-        # Prepend CB+UMI to R1, truncate original sequence to maintain read length
-        # Note: With 50bp simulated reads, final R1 will be ~78bp (28bp barcode+UMI + 50bp seq)
+        # Final R1 length = CB_LENGTH + UMI_LENGTH + READ_LENGTH (from config)
         barcode_umi = cell_barcode + umi
         barcode_umi_qual = 'I' * len(barcode_umi)  # High quality scores for barcodes
         
         # Truncate original R1 sequence to fit target length (or use all if shorter)
-        target_r1_len = 150  # Target final R1 length (for 150bp simulated reads)
+        target_r1_len = CB_LENGTH + UMI_LENGTH + READ_LENGTH
         max_original_len = target_r1_len - len(barcode_umi)
         r1_seq_truncated = r1_seq[:max_original_len]
         r1_qual_truncated = r1_qual[:max_original_len]
