@@ -305,10 +305,73 @@ h("  spans a chain boundary (the region is split). Unmapped counts are unaffecte
 h("- **Cleanup:** `rm -rf analysis/liftover/data/ analysis/liftover/results/`")
 
 # ==============================================================================
-# Write report
+# Write report markdown
 # ==============================================================================
 report_path = RESULTS_DIR / "REPORT.md"
 with open(report_path, "w") as f:
     f.write("\n".join(lines) + "\n")
-
 print(f"Report written to: {report_path}")
+
+# ==============================================================================
+# Export structured TSVs for R Markdown rendering
+# ==============================================================================
+import csv
+
+def write_tsv(path, header, rows):
+    with open(path, "w", newline="") as f:
+        w = csv.writer(f, delimiter="\t")
+        w.writerow(header)
+        for r in rows:
+            w.writerow(r)
+
+# Table 1: class counts
+write_tsv(RESULTS_DIR / "t1_class_counts.tsv",
+    ["class", "hg38_n", "chm13_n"],
+    [(c, hg38_class.get(c, 0), chm13_class.get(c, 0))
+     for c in bio_classes] +
+    [("Other", hg38_total - hg38_bio, chm13_total - chm13_bio),
+     ("Total", hg38_total, chm13_total)])
+
+# Table 2: SINE families
+write_tsv(RESULTS_DIR / "t2_sine_families.tsv",
+    ["family", "hg38_n", "chm13_n"],
+    [(f, hg38_sine_fam.get(f, 0), chm13_sine_fam.get(f, 0))
+     for f in all_sine_fams[:10]] +
+    [("Total", hg38_sine_n, chm13_sine_n)])
+
+# Table 3: LINE families
+write_tsv(RESULTS_DIR / "t3_line_families.tsv",
+    ["family", "hg38_n", "chm13_n"],
+    [(f, hg38_line_fam.get(f, 0), chm13_line_fam.get(f, 0))
+     for f in all_line_fams[:8]] +
+    [("Total", hg38_line_n, chm13_line_n)])
+
+# Table 4: liftover summary
+write_tsv(RESULTS_DIR / "t4_liftover_summary.tsv",
+    ["outcome", "count"],
+    [("Mapped", hg38_total - unmapped_n),
+     ("Unmapped (hg38-specific)", unmapped_n),
+     ("Total", hg38_total)])
+
+# Table 4a: unmapped by class
+write_tsv(RESULTS_DIR / "t4a_unmapped_by_class.tsv",
+    ["class", "unmapped_n", "hg38_total_in_class"],
+    [(c, n, hg38_class.get(c, 0))
+     for c, n in sorted(unmap_class.items(), key=lambda x: -x[1])[:10]])
+
+# Table 4b: top subfamilies
+write_tsv(RESULTS_DIR / "t4b_top_subfamilies.tsv",
+    ["subfamily", "count"],
+    list(unmap_subfam.most_common(20)))
+
+# Table 5: Alu age breakdown
+write_tsv(RESULTS_DIR / "t5_alu_age.tsv",
+    ["age_group", "hg38_bg_n", "hg38_unmap_n", "chm13_unmap_n"],
+    [(cat,
+      hg38_alu_bg.get(cat, 0),
+      hg38_unmap_au.get(cat, 0),
+      chm13_unmap_au.get(cat, 0))
+     for cat in order] +
+    [("Total", hg38_bg_n, hg38_unmap_n, chm13_unmap_n)])
+
+print("TSV data files written for R Markdown rendering.")

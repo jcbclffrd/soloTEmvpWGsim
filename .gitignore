@@ -112,4 +112,10 @@ slurm-*.out
 # Scripts and MANIFEST are tracked; data/ and results/ are not.
 # ==============================================================================
 analysis/liftover/data/
-analysis/liftover/results/
+analysis/liftover/results/*.bed
+analysis/liftover/results/*.tsv
+analysis/liftover/results/*.md
+analysis/liftover/results/*.tex
+analysis/liftover/results/*.log
+# Keep the rendered HTML report
+!analysis/liftover/results/REPORT.html

@@ -1,0 +1,254 @@
+---
+title: "hg38 ↔ T2T-CHM13 Transposable Element Liftover Analysis"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: true
+    df_print: paged
+  pdf_document:
+    toc: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(knitr)
+library(kableExtra)
+library(dplyr)
+
+# Data lives in results/ relative to this Rmd file
+data_dir <- file.path(dirname(knitr::current_input(dir = TRUE)), "results")
+
+kt <- function(df, caption = NULL, ...) {
+  kable(df, caption = caption, format.args = list(big.mark = ","),
+        align = c("l", rep("r", ncol(df) - 1)), ...) %>%
+    kable_styling(bootstrap_options = c("striped", "hover", "condensed", "bordered"),
+                  full_width = FALSE, position = "left") %>%
+    row_spec(nrow(df), bold = TRUE, background = "#f0f0f0")
+}
+```
+
+> **Motivation:** Are there more assembly-specific TE loci in hg38 than in T2T-CHM13?
+> And are young, recently-mobile Alu elements disproportionately absent from
+> the other assembly — evidence that they lack stable genomic addresses across individuals?
+
+---
+
+# Total RepeatMasker Annotations {#total}
+
+hg38 and T2T-CHM13v2.0 RepeatMasker annotations across all repeat classes.
+
+```{r table1}
+t1 <- read.delim(file.path(data_dir, "t1_class_counts.tsv"))
+t1 <- t1 %>%
+  mutate(
+    hg38_pct  = ifelse(class == "Total", "100%", paste0(round(hg38_n  / hg38_n[class=="Total"]  * 100, 1), "%")),
+    chm13_pct = ifelse(class == "Total", "100%", paste0(round(chm13_n / chm13_n[class=="Total"] * 100, 1), "%"))
+  ) %>%
+  select(Class = class,
+         `hg38 count` = hg38_n,
+         `hg38 %` = hg38_pct,
+         `CHM13 count` = chm13_n,
+         `CHM13 %` = chm13_pct)
+
+kt(t1, caption = "Table 1. Total TE annotations by class")
+```
+
+---
+
+# SINE and LINE Family Breakdown {#families}
+
+## SINE Families
+
+```{r table2}
+t2 <- read.delim(file.path(data_dir, "t2_sine_families.tsv"))
+total_row <- t2[t2$family == "Total", ]
+t2 <- t2 %>%
+  mutate(
+    hg38_pct  = ifelse(family == "Total", "100%",
+                  paste0(round(hg38_n  / total_row$hg38_n  * 100, 1), "%")),
+    chm13_pct = ifelse(family == "Total", "100%",
+                  paste0(round(chm13_n / total_row$chm13_n * 100, 1), "%"))
+  ) %>%
+  select(Family = family,
+         `hg38 count` = hg38_n,
+         `hg38 %` = hg38_pct,
+         `CHM13 count` = chm13_n,
+         `CHM13 %` = chm13_pct)
+
+kt(t2, caption = "Table 2. SINE family breakdown")
+```
+
+## LINE Families
+
+```{r table3}
+t3 <- read.delim(file.path(data_dir, "t3_line_families.tsv"))
+total_row3 <- t3[t3$family == "Total", ]
+t3 <- t3 %>%
+  mutate(
+    hg38_pct  = ifelse(family == "Total", "100%",
+                  paste0(round(hg38_n  / total_row3$hg38_n  * 100, 1), "%")),
+    chm13_pct = ifelse(family == "Total", "100%",
+                  paste0(round(chm13_n / total_row3$chm13_n * 100, 1), "%"))
+  ) %>%
+  select(Family = family,
+         `hg38 count` = hg38_n,
+         `hg38 %` = hg38_pct,
+         `CHM13 count` = chm13_n,
+         `CHM13 %` = chm13_pct)
+
+kt(t3, caption = "Table 3. LINE family breakdown")
+```
+
+---
+
+# hg38 → CHM13 Liftover Results {#liftover}
+
+All **5,683,690** hg38 RepeatMasker loci were lifted to T2T-CHM13 coordinates
+using CrossMap v0.7.0 with the UCSC hg38→hs1 chain file.
+
+## Summary
+
+```{r table4}
+t4 <- read.delim(file.path(data_dir, "t4_liftover_summary.tsv"))
+total_n <- t4$count[t4$outcome == "Total"]
+t4 <- t4 %>%
+  mutate(pct = ifelse(outcome == "Total", "100%",
+                paste0(round(count / total_n * 100, 1), "%"))) %>%
+  select(Outcome = outcome, Count = count, `% of hg38 total` = pct)
+
+kable(t4, caption = "Table 4. Liftover summary",
+      format.args = list(big.mark = ","),
+      align = c("l", "r", "r")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "bordered"),
+                full_width = FALSE, position = "left") %>%
+  row_spec(which(t4$Outcome == "Unmapped (hg38-specific)"),
+           bold = TRUE, color = "white", background = "#c0392b") %>%
+  row_spec(nrow(t4), bold = TRUE, background = "#f0f0f0")
+```
+
+> **58,933 hg38 loci have no equivalent position in CHM13.** These represent a mix of:
+> hg38 assembly errors, collapsed repeats resolved differently in T2T, and genuine
+> polymorphic insertions absent from CHM13 (this individual's genome).
+
+## Unmapped Elements by Class
+
+```{r table4a}
+t4a <- read.delim(file.path(data_dir, "t4a_unmapped_by_class.tsv"))
+total_unmap <- sum(t4a$unmapped_n)
+t4a <- t4a %>%
+  mutate(
+    `% of unmapped`        = paste0(round(unmapped_n / total_unmap * 100, 1), "%"),
+    `% of hg38 class total`= paste0(round(unmapped_n / hg38_total_in_class * 100, 1), "%")
+  ) %>%
+  select(Class = class,
+         `Unmapped count` = unmapped_n,
+         `% of unmapped`,
+         `% of hg38 class total`)
+
+kt(t4a, caption = "Table 4a. Unmapped elements by class")
+```
+
+## Top 20 Unmapped Subfamilies
+
+```{r table4b}
+t4b <- read.delim(file.path(data_dir, "t4b_top_subfamilies.tsv"))
+total_unmap_all <- sum(t4b$count)
+t4b <- t4b %>%
+  mutate(`% of unmapped` = paste0(round(count / total_unmap_all * 100, 1), "%")) %>%
+  select(Subfamily = subfamily, Count = count, `% of unmapped`)
+
+kable(t4b, caption = "Table 4b. Top 20 hg38-specific (unmapped) subfamilies",
+      format.args = list(big.mark = ","),
+      align = c("l", "r", "r")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "bordered"),
+                full_width = FALSE, position = "left")
+```
+
+---
+
+# Young vs. Old Alu — The Key Finding {#alu-age}
+
+Among Alu elements that failed liftover, **young AluY subfamilies are massively
+over-represented** in the CHM13-specific set relative to the hg38 background.
+This is consistent with young Alu elements still retrotransposing and creating
+individual-specific insertions that are absent from other assemblies.
+
+```{r table5}
+t5 <- read.delim(file.path(data_dir, "t5_alu_age.tsv"))
+
+totals <- t5[t5$age_group == "Total", ]
+t5_display <- t5 %>% filter(age_group != "Total") %>%
+  mutate(
+    hg38_bg_pct     = paste0(round(hg38_bg_n    / totals$hg38_bg_n    * 100, 1), "%"),
+    hg38_unmap_pct  = paste0(round(hg38_unmap_n / totals$hg38_unmap_n * 100, 1), "%"),
+    chm13_unmap_pct = paste0(round(chm13_unmap_n/ totals$chm13_unmap_n* 100, 1), "%")
+  )
+
+# Add total row
+total_row <- data.frame(
+  age_group       = "Total",
+  hg38_bg_n       = totals$hg38_bg_n,
+  hg38_unmap_n    = totals$hg38_unmap_n,
+  chm13_unmap_n   = totals$chm13_unmap_n,
+  hg38_bg_pct     = "100%",
+  hg38_unmap_pct  = "100%",
+  chm13_unmap_pct = "100%"
+)
+t5_display <- bind_rows(t5_display, total_row)
+
+t5_out <- t5_display %>%
+  select(
+    `Alu age group`                              = age_group,
+    `hg38 background\nn = 1,228,449`            = hg38_bg_n,
+    ` `                                          = hg38_bg_pct,
+    `hg38-specific unmapped\nn = 14,531`         = hg38_unmap_n,
+    `  `                                         = hg38_unmap_pct,
+    `CHM13-specific unmapped\nn = 10,068`        = chm13_unmap_n,
+    `   `                                        = chm13_unmap_pct
+  )
+
+kable(t5_out,
+      caption = "Table 5. Young vs. old Alu in assembly-specific unmapped sets vs. hg38 background",
+      format.args = list(big.mark = ","),
+      align = c("l", "r", "r", "r", "r", "r", "r")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "bordered"),
+                full_width = FALSE, position = "left") %>%
+  add_header_above(c(" " = 1,
+                     "hg38 background" = 2,
+                     "hg38-specific unmapped" = 2,
+                     "CHM13-specific unmapped" = 2)) %>%
+  row_spec(which(t5_out[[1]] == "Young (AluY*)"),
+           bold = TRUE, color = "white", background = "#2980b9") %>%
+  row_spec(nrow(t5_out), bold = TRUE, background = "#f0f0f0") %>%
+  footnote(general = paste0(
+    "AluY* = young Alu subfamilies (~1-5 Mya, still occasionally retrotransposing). ",
+    "AluS* = intermediate (~5-20 Mya). AluJ* = oldest (~20-65 Mya, universally fixed). ",
+    "CHM13-specific unmapped from CHM13→hg38 liftover."
+  ))
+```
+
+> **Interpretation:** Young AluY* elements make up ~12% of all hg38 Alu loci (background)
+> but **76% of CHM13-specific unmapped Alu loci**. Young Alus are the elements
+> most likely to be absent from the other assembly — direct evidence that recently-mobile
+> TEs are still creating individual-specific (polymorphic) insertions that lack
+> fixed genomic addresses across the human population.
+
+---
+
+# Methods {#methods}
+
+| Item | Details |
+|------|---------|
+| hg38 RepeatMasker | UCSC `rmsk.txt.gz`, downloaded October 2022 |
+| CHM13 RepeatMasker | T2T-CHM13v2.0 RepeatMasker BED (project `references/`) |
+| Liftover tool | CrossMap v0.7.0 |
+| Chain files | UCSC hg38→hs1 and hs1→hg38 |
+| Platform | aarch64 Linux (UCSC liftOver binary not available; CrossMap used instead) |
+| Reference | Hoyt et al. 2022, *Science* 376, eabk3084 (reported 20,427 CHM13-specific TEs across all classes) |
+
+**Cleanup:** to remove all downloaded data and results: `rm -rf analysis/liftover/data/ analysis/liftover/results/`
