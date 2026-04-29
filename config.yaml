@@ -32,7 +32,7 @@ simulation:
   # Expression level — set independently of sequencing depth.
   # Represents captured RNA molecules per locus per cell.
   # In a real experiment this would be estimated empirically.
-  umi_per_locus: 1
+  umi_per_locus: 10
 
   # DERIVED (informational) — do not set manually.
   # reads_per_locus_per_cell = reads_per_cell / n_te_loci = 50000 / 100 = 500
