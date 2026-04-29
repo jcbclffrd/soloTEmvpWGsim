@@ -117,5 +117,6 @@ analysis/liftover/results/*.tsv
 analysis/liftover/results/*.md
 analysis/liftover/results/*.tex
 analysis/liftover/results/*.log
-# Keep the rendered HTML report
+# Keep the rendered HTML reports
 !analysis/liftover/results/REPORT.html
+!analysis/liftover/results/REPORT2.html

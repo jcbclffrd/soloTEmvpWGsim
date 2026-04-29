@@ -1,0 +1,3 @@
+SoloTE|DNA
+SoloTE|LTR
+SoloTE|RTE-Bo.B

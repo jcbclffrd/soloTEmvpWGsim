@@ -1,0 +1,12 @@
+SoloTE|Crypton
+SoloTE|Crypton-A
+SoloTE|I-Jockey
+SoloTE|Kolobok
+SoloTE|L1-Tx1
+SoloTE|RTE-BovB
+SoloTE|TcMar-Tc1
+SoloTE|hAT-hAT19
+SoloTE|tRNA
+SoloTE|tRNA-Deu
+SoloTE|tRNA-RTE
+SoloTE|undefined
