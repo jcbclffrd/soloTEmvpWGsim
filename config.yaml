@@ -21,18 +21,18 @@ software:
 # ==============================================================================
 simulation:
   # Number of synthetic cells to generate
-  n_cells: 100
+  n_cells: 10
   
   # Number of TE loci to include in ground truth
   n_te_loci: 100
   
   # Sequencing depth
-  reads_per_cell: 50000  # Total reads per cell
+  reads_per_cell: 50  # Total reads per cell
   
   # Expression level — set independently of sequencing depth.
   # Represents captured RNA molecules per locus per cell.
   # In a real experiment this would be estimated empirically.
-  umi_per_locus: 100
+  umi_per_locus: 1
 
   # DERIVED (informational) — do not set manually.
   # reads_per_locus_per_cell = reads_per_cell / n_te_loci = 50000 / 100 = 500
