@@ -106,3 +106,10 @@ slurm-*.out
 # Conda environment
 # ==============================================================================
 .conda/
+
+# ==============================================================================
+# Analysis data directories (large downloads — see analysis/*/MANIFEST.md)
+# Scripts and MANIFEST are tracked; data/ and results/ are not.
+# ==============================================================================
+analysis/liftover/data/
+analysis/liftover/results/
