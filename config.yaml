@@ -52,15 +52,15 @@ simulation:
 # TE Selection Criteria (for 01_select_te_loci.R)
 # ==============================================================================
 te_selection:
-  # Target TE families — restricted to LINE/SINE only.
+  # Target TE families — SINE only.
+  # LINEs (L1, L2) excluded: most copies are 5' truncated fragments without
+  # an intact poly-A tail, making them poor models for 3' scRNA-seq capture.
   # LTR (ERVL-MaLR) and DNA transposons (hAT-Charlie) excluded:
   # LTRs have no genomically encoded poly-A (ends in LTR sequence);
   # DNA transposons have TIRs, not poly-A, and no mRNA intermediate.
-  # Only LINE/SINE are captured by oligo-dT in 3' scRNA-seq.
+  # Only SINE (Alu, MIR) are reliably captured by oligo-dT in 3' scRNA-seq.
   families:
     - Alu          # SINE
-    - L1           # LINE
-    - L2           # LINE
     - MIR          # SINE
   
   # Selection criteria for well-separated TEs
