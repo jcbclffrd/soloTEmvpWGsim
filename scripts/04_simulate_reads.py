@@ -44,10 +44,11 @@ random.seed(RANDOM_SEED)
 
 TOTAL_READS  = N_CELLS * READS_PER_CELL
 
-# How far upstream of the poly-A tail the oligo-dT can prime (bp jitter).
-# In real data, the primer anneals at various positions within the poly-A,
-# so reads start at slightly different distances from the 3' end.
-PRIME_JITTER = 50
+# Variation in where the oligo-dT primer anneals within the poly-A tail.
+# The primer always lands IN the poly-A, so the read always ends within
+# the poly-A region. Keep this smaller than the typical poly-A tail length
+# (~15-25bp for Alu/L1) so every read captures at least some poly-A.
+PRIME_JITTER = 10
 
 print("Configuration:")
 print(f"  Read length: {READ_LENGTH}bp")
