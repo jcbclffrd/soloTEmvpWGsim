@@ -38,6 +38,60 @@ kt <- function(df, caption = NULL, ...) {
 
 ---
 
+# How CrossMap Liftover Works {#how-crossmap}
+
+## What is a liftover?
+
+A **liftover** translates genomic coordinates from one assembly to another.
+Given a locus like `chr1:1,000,000–1,000,300` in hg38, liftover asks: *what is
+the equivalent position in T2T-CHM13?*
+
+CrossMap v0.7.0 implements this using **chain files** — precomputed pairwise
+alignments from the UCSC Genome Browser. A chain file encodes which hg38 blocks
+are syntenic to (i.e., evolutionarily conserved and unambiguously aligned to)
+which CHM13 blocks. Two chain files were used here:
+
+| Chain file | Direction |
+|------------|-----------|
+| `hg38ToHs1.over.chain.gz` | hg38 → CHM13 (hs1) |
+| `hs1ToHg38.over.chain.gz` | CHM13 → hg38 |
+
+## What does "hg38 → CHM13" mean?
+
+The direction **hg38 → CHM13** means: take each locus annotated in hg38 and ask
+whether it has a syntenic counterpart in CHM13 coordinate space.
+
+- **Mapped** → the locus has a defined syntenic position in CHM13. It exists in
+  both assemblies (though possibly at a slightly different coordinate).
+- **Unmapped** → the locus has **no unambiguous syntenic counterpart** in CHM13.
+  Unmapped covers two distinct situations:
+  1. *True absence* — the sequence genuinely does not exist in the CHM13 individual's
+     genome (a polymorphic insertion absent from CHM13).
+  2. *Assembly difference* — the region is collapsed, duplicated, or resolved
+     differently between the two assemblies (e.g., centromere expansion in T2T).
+  3. *Ambiguous multi-hit* — the locus maps to **multiple** positions in CHM13.
+     Unlike STAR (which reports all mapping positions), CrossMap cannot assign the
+     locus to a single coordinate and therefore calls it **unmapped**. This is
+     analogous to a read that multi-maps in STAR and is excluded from unique-mapper
+     counts.
+
+## Why run both directions?
+
+Running hg38 → CHM13 and CHM13 → hg38 independently gives two distinct
+"assembly-specific" sets:
+
+| Direction | Unmapped set | Interpretation |
+|-----------|--------------|----------------|
+| hg38 → CHM13 | hg38-specific loci | Present in hg38 but absent/unresolved in CHM13 |
+| CHM13 → hg38 | CHM13-specific loci | Present in CHM13 but absent/unresolved in hg38 |
+
+These sets are **not mirror images**. They differ because the two assemblies have
+different overall structures: T2T-CHM13 resolves centromeres and other difficult
+regions that are collapsed in hg38, while hg38 may contain some sequences absent
+from the single CHM13 individual.
+
+---
+
 # Total RepeatMasker Annotations {#total}
 
 hg38 and T2T-CHM13v2.0 RepeatMasker annotations across all repeat classes.
@@ -106,36 +160,40 @@ kt(t3, caption = "Table 3. LINE family breakdown")
 
 ---
 
-# hg38 → CHM13 Liftover Results {#liftover}
+# Liftover Results {#liftover}
 
-All **5,683,690** hg38 RepeatMasker loci were lifted to T2T-CHM13 coordinates
-using CrossMap v0.7.0 with the UCSC hg38→hs1 chain file.
+## Summary: Both Directions {#both-directions}
 
-## Summary
+```{r table6}
+t6 <- read.delim(file.path(data_dir, "t6_liftover_both.tsv"))
+t6_out <- t6 %>%
+  mutate(
+    mapped_pct   = paste0(round(mapped   / source_total * 100, 1), "%"),
+    unmapped_pct = paste0(round(unmapped / source_total * 100, 1), "%")
+  ) %>%
+  select(Direction = direction,
+         `Source loci` = source_total,
+         `Mapped` = mapped,
+         `Mapped %` = mapped_pct,
+         `Unmapped (assembly-specific)` = unmapped,
+         `Unmapped %` = unmapped_pct)
 
-```{r table4}
-t4 <- read.delim(file.path(data_dir, "t4_liftover_summary.tsv"))
-total_n <- t4$count[t4$outcome == "Total"]
-t4 <- t4 %>%
-  mutate(pct = ifelse(outcome == "Total", "100%",
-                paste0(round(count / total_n * 100, 1), "%"))) %>%
-  select(Outcome = outcome, Count = count, `% of hg38 total` = pct)
-
-kable(t4, caption = "Table 4. Liftover summary",
+kable(t6_out, caption = "Table 6. Liftover summary — both directions",
       format.args = list(big.mark = ","),
-      align = c("l", "r", "r")) %>%
+      align = c("l", "r", "r", "r", "r", "r")) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "bordered"),
                 full_width = FALSE, position = "left") %>%
-  row_spec(which(t4$Outcome == "Unmapped (hg38-specific)"),
-           bold = TRUE, color = "white", background = "#c0392b") %>%
-  row_spec(nrow(t4), bold = TRUE, background = "#f0f0f0")
+  row_spec(2, bold = TRUE, color = "white", background = "#8e44ad")
 ```
 
-> **58,933 hg38 loci have no equivalent position in CHM13.** These represent a mix of:
-> hg38 assembly errors, collapsed repeats resolved differently in T2T, and genuine
-> polymorphic insertions absent from CHM13 (this individual's genome).
+> **CHM13 has more total unmapped loci (89,234 vs 58,933)**, but this is almost entirely
+> driven by Satellite repeats in centromeres newly resolved by T2T sequencing —
+> not by mobile TE insertions. For LINE/SINE elements specifically, hg38 has
+> **2.7× more** assembly-specific loci than CHM13 (see Section 4.4).
 
-## Unmapped Elements by Class
+## hg38 → CHM13: Unmapped by Class {#hg38-unmapped-class}
+
+These are loci annotated in hg38 with no syntenic counterpart in CHM13.
 
 ```{r table4a}
 t4a <- read.delim(file.path(data_dir, "t4a_unmapped_by_class.tsv"))
@@ -150,10 +208,10 @@ t4a <- t4a %>%
          `% of unmapped`,
          `% of hg38 class total`)
 
-kt(t4a, caption = "Table 4a. Unmapped elements by class")
+kt(t4a, caption = "Table 4a. hg38-specific unmapped elements by class")
 ```
 
-## Top 20 Unmapped Subfamilies
+## hg38 → CHM13: Top 20 Unmapped Subfamilies {#hg38-top-subfam}
 
 ```{r table4b}
 t4b <- read.delim(file.path(data_dir, "t4b_top_subfamilies.tsv"))
@@ -168,6 +226,90 @@ kable(t4b, caption = "Table 4b. Top 20 hg38-specific (unmapped) subfamilies",
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "bordered"),
                 full_width = FALSE, position = "left")
 ```
+
+## CHM13 → hg38: Unmapped by Class {#chm13-unmapped-class}
+
+These are loci annotated in CHM13 with no syntenic counterpart in hg38.
+Note that **Satellite** and **Simple_repeat** classes dominate — these are
+centromeric and pericentromeric repeats that T2T resolved for the first time
+but that exist in hg38 only as collapsed or absent sequence.
+
+```{r table7}
+t7 <- read.delim(file.path(data_dir, "t7_chm13_unmapped_by_class.tsv"))
+total_unmap7 <- sum(t7$unmapped_n)
+t7_out <- t7 %>%
+  mutate(
+    `% of unmapped`          = paste0(round(unmapped_n / total_unmap7 * 100, 1), "%"),
+    `% of CHM13 class total` = paste0(round(unmapped_n / chm13_total_in_class * 100, 1), "%")
+  ) %>%
+  select(Class = class,
+         `Unmapped count` = unmapped_n,
+         `% of unmapped`,
+         `% of CHM13 class total`)
+
+kable(t7_out, caption = "Table 7. CHM13-specific unmapped elements by class",
+      format.args = list(big.mark = ","),
+      align = c("l", "r", "r", "r")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "bordered"),
+                full_width = FALSE, position = "left") %>%
+  row_spec(which(t7_out$Class == "Satellite"), bold = TRUE, color = "white", background = "#c0392b") %>%
+  row_spec(nrow(t7_out), bold = TRUE, background = "#f0f0f0")
+```
+
+## CHM13 → hg38: Top 20 Unmapped Subfamilies {#chm13-top-subfam}
+
+```{r table8}
+t8 <- read.delim(file.path(data_dir, "t8_chm13_top_subfamilies.tsv"))
+total_unmap8 <- sum(t8$count)
+t8_out <- t8 %>%
+  mutate(`% of unmapped` = paste0(round(count / total_unmap8 * 100, 1), "%")) %>%
+  select(Subfamily = subfamily, Count = count, `% of unmapped`)
+
+kable(t8_out, caption = "Table 8. Top 20 CHM13-specific (unmapped) subfamilies",
+      format.args = list(big.mark = ","),
+      align = c("l", "r", "r")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "bordered"),
+                full_width = FALSE, position = "left")
+```
+
+> **HSATII and (ATCGAATGGA)n** account for the majority of CHM13-specific elements —
+> these are human satellite II repeats concentrated in pericentromeric regions,
+> which T2T-CHM13 resolved completely for the first time. Their "absence" from hg38
+> is an assembly artifact, not a biological insertion difference.
+
+## LINE/SINE-Specific Comparison {#linesine-comparison}
+
+Restricting to LINE and SINE elements removes the satellite/centromere signal
+and isolates the biologically relevant TE-insertion comparison.
+
+```{r table9}
+t9 <- read.delim(file.path(data_dir, "t9_linesine_comparison.tsv"))
+t9_out <- t9 %>%
+  mutate(
+    unmapped_pct_fmt = paste0(round(unmapped_pct, 2), "%"),
+    fold = c(
+      round(t9$unmapped_pct[1] / t9$unmapped_pct[2], 1),
+      1.0
+    )
+  ) %>%
+  select(Direction = direction,
+         `Source LINE/SINE loci` = source_linesine_total,
+         `Unmapped (assembly-specific)` = unmapped_linesine,
+         `% unmapped` = unmapped_pct_fmt,
+         `Fold vs CHM13` = fold)
+
+kable(t9_out, caption = "Table 9. LINE/SINE-only assembly-specific comparison",
+      format.args = list(big.mark = ","),
+      align = c("l", "r", "r", "r", "r")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "bordered"),
+                full_width = FALSE, position = "left") %>%
+  row_spec(1, bold = TRUE, color = "white", background = "#27ae60") %>%
+  row_spec(nrow(t9_out), bold = TRUE, background = "#f0f0f0")
+```
+
+> **Among LINE and SINE elements, hg38 has 2.7× more assembly-specific loci than CHM13**
+> (0.96% vs 0.36% unmapped rate). This is the primary TE-biology signal: hg38 contains
+> more polymorphic or unresolved TE insertions than the T2T reference genome.
 
 ---
 
@@ -189,7 +331,6 @@ t5_display <- t5 %>% filter(age_group != "Total") %>%
     chm13_unmap_pct = paste0(round(chm13_unmap_n/ totals$chm13_unmap_n* 100, 1), "%")
   )
 
-# Add total row
 total_row <- data.frame(
   age_group       = "Total",
   hg38_bg_n       = totals$hg38_bg_n,
@@ -247,8 +388,8 @@ kable(t5_out,
 | hg38 RepeatMasker | UCSC `rmsk.txt.gz`, downloaded October 2022 |
 | CHM13 RepeatMasker | T2T-CHM13v2.0 RepeatMasker BED (project `references/`) |
 | Liftover tool | CrossMap v0.7.0 |
-| Chain files | UCSC hg38→hs1 and hs1→hg38 |
-| Platform | aarch64 Linux (UCSC liftOver binary not available; CrossMap used instead) |
-| Reference | Hoyt et al. 2022, *Science* 376, eabk3084 (reported 20,427 CHM13-specific TEs across all classes) |
+| Chain files | UCSC `hg38ToHs1.over.chain.gz` and `hs1ToHg38.over.chain.gz` |
+| Architecture | aarch64 Linux (UCSC liftOver binary not available; CrossMap used instead) |
+| Reference | Hoyt et al. 2022, *Science* 376, eabk3084 (reported 20,427 CHM13-specific TEs) |
 
 **Cleanup:** to remove all downloaded data and results: `rm -rf analysis/liftover/data/ analysis/liftover/results/`

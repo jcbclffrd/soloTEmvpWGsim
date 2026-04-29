@@ -374,4 +374,42 @@ write_tsv(RESULTS_DIR / "t5_alu_age.tsv",
      for cat in order] +
     [("Total", hg38_bg_n, hg38_unmap_n, chm13_unmap_n)])
 
+# CHM13→hg38 full liftover (all classes)
+chm13_unmapped_full = load_bed(RESULTS_DIR / "chm13_all_to_hg38_unmapped.bed")
+chm13_unmap_class   = Counter(r[6] for r in chm13_unmapped_full)
+chm13_unmap_subfam  = Counter(r[3] for r in chm13_unmapped_full)
+chm13_total         = len(chm13_all)
+chm13_unmapped_n    = len(chm13_unmapped_full)
+
+# Symmetric liftover summary (both directions, all classes)
+write_tsv(RESULTS_DIR / "t6_liftover_both.tsv",
+    ["direction", "source_total", "mapped", "unmapped"],
+    [("hg38 → CHM13", hg38_total, hg38_total - unmapped_n, unmapped_n),
+     ("CHM13 → hg38", chm13_total, chm13_total - chm13_unmapped_n, chm13_unmapped_n)])
+
+# CHM13 unmapped by class
+write_tsv(RESULTS_DIR / "t7_chm13_unmapped_by_class.tsv",
+    ["class", "unmapped_n", "chm13_total_in_class"],
+    [(c, n, chm13_class.get(c, 0))
+     for c, n in sorted(chm13_unmap_class.items(), key=lambda x: -x[1])[:10]])
+
+# CHM13 top unmapped subfamilies
+write_tsv(RESULTS_DIR / "t8_chm13_top_subfamilies.tsv",
+    ["subfamily", "count"],
+    list(chm13_unmap_subfam.most_common(20)))
+
+# LINE/SINE focused comparison (the biologically relevant subset)
+write_tsv(RESULTS_DIR / "t9_linesine_comparison.tsv",
+    ["direction", "source_linesine_total", "unmapped_linesine", "unmapped_pct"],
+    [("hg38 → CHM13 (LINE/SINE only)",
+      hg38_total - sum(hg38_class.get(c, 0) for c in
+                       ["Simple_repeat","Low_complexity","Satellite","Retroposon",
+                        "snRNA","DNA?","tRNA","rRNA","RC","srpRNA","scRNA","RNA",
+                        "RC?","SINE?","LTR","LTR?","DNA","Unknown"]),
+      len(unmapped_ls), round(len(unmapped_ls)/3803935*100, 2)),
+     ("CHM13 → hg38 (LINE/SINE only)",
+      len(chm13_unmapped) + len(load_bed(RESULTS_DIR / "chm13_to_hg38_mapped.bed")),
+      len(chm13_unmapped),
+      round(len(chm13_unmapped)/(len(chm13_unmapped)+len(load_bed(RESULTS_DIR / "chm13_to_hg38_mapped.bed")))*100, 2))])
+
 print("TSV data files written for R Markdown rendering.")

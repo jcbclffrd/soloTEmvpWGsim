@@ -3005,8 +3005,110 @@ disproportionately absent from the other assembly — evidence that they
 lack stable genomic addresses across individuals?</p>
 </blockquote>
 <hr />
-<div id="total" class="section level1" number="1">
-<h1><span class="header-section-number">1</span> Total RepeatMasker
+<div id="how-crossmap" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> How CrossMap Liftover
+Works</h1>
+<div id="what-is-a-liftover" class="section level2" number="1.1">
+<h2><span class="header-section-number">1.1</span> What is a
+liftover?</h2>
+<p>A <strong>liftover</strong> translates genomic coordinates from one
+assembly to another. Given a locus like
+<code>chr1:1,000,000–1,000,300</code> in hg38, liftover asks: <em>what
+is the equivalent position in T2T-CHM13?</em></p>
+<p>CrossMap v0.7.0 implements this using <strong>chain files</strong> —
+precomputed pairwise alignments from the UCSC Genome Browser. A chain
+file encodes which hg38 blocks are syntenic to (i.e., evolutionarily
+conserved and unambiguously aligned to) which CHM13 blocks. Two chain
+files were used here:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Chain file</th>
+<th>Direction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>hg38ToHs1.over.chain.gz</code></td>
+<td>hg38 → CHM13 (hs1)</td>
+</tr>
+<tr class="even">
+<td><code>hs1ToHg38.over.chain.gz</code></td>
+<td>CHM13 → hg38</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="what-does-hg38-chm13-mean" class="section level2" number="1.2">
+<h2><span class="header-section-number">1.2</span> What does “hg38 →
+CHM13” mean?</h2>
+<p>The direction <strong>hg38 → CHM13</strong> means: take each locus
+annotated in hg38 and ask whether it has a syntenic counterpart in CHM13
+coordinate space.</p>
+<ul>
+<li><strong>Mapped</strong> → the locus has a defined syntenic position
+in CHM13. It exists in both assemblies (though possibly at a slightly
+different coordinate).</li>
+<li><strong>Unmapped</strong> → the locus has <strong>no unambiguous
+syntenic counterpart</strong> in CHM13. Unmapped covers two distinct
+situations:
+<ol style="list-style-type: decimal">
+<li><em>True absence</em> — the sequence genuinely does not exist in the
+CHM13 individual’s genome (a polymorphic insertion absent from
+CHM13).</li>
+<li><em>Assembly difference</em> — the region is collapsed, duplicated,
+or resolved differently between the two assemblies (e.g., centromere
+expansion in T2T).</li>
+<li><em>Ambiguous multi-hit</em> — the locus maps to
+<strong>multiple</strong> positions in CHM13. Unlike STAR (which reports
+all mapping positions), CrossMap cannot assign the locus to a single
+coordinate and therefore calls it <strong>unmapped</strong>. This is
+analogous to a read that multi-maps in STAR and is excluded from
+unique-mapper counts.</li>
+</ol></li>
+</ul>
+</div>
+<div id="why-run-both-directions" class="section level2" number="1.3">
+<h2><span class="header-section-number">1.3</span> Why run both
+directions?</h2>
+<p>Running hg38 → CHM13 and CHM13 → hg38 independently gives two
+distinct “assembly-specific” sets:</p>
+<table>
+<colgroup>
+<col width="26%" />
+<col width="34%" />
+<col width="39%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Direction</th>
+<th>Unmapped set</th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>hg38 → CHM13</td>
+<td>hg38-specific loci</td>
+<td>Present in hg38 but absent/unresolved in CHM13</td>
+</tr>
+<tr class="even">
+<td>CHM13 → hg38</td>
+<td>CHM13-specific loci</td>
+<td>Present in CHM13 but absent/unresolved in hg38</td>
+</tr>
+</tbody>
+</table>
+<p>These sets are <strong>not mirror images</strong>. They differ
+because the two assemblies have different overall structures: T2T-CHM13
+resolves centromeres and other difficult regions that are collapsed in
+hg38, while hg38 may contain some sequences absent from the single CHM13
+individual.</p>
+<hr />
+</div>
+</div>
+<div id="total" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Total RepeatMasker
 Annotations</h1>
 <p>hg38 and T2T-CHM13v2.0 RepeatMasker annotations across all repeat
 classes.</p>
@@ -3174,11 +3276,11 @@ Total
 </table>
 <hr />
 </div>
-<div id="families" class="section level1" number="2">
-<h1><span class="header-section-number">2</span> SINE and LINE Family
+<div id="families" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> SINE and LINE Family
 Breakdown</h1>
-<div id="sine-families" class="section level2" number="2.1">
-<h2><span class="header-section-number">2.1</span> SINE Families</h2>
+<div id="sine-families" class="section level2" number="3.1">
+<h2><span class="header-section-number">3.1</span> SINE Families</h2>
 <table class="table table-striped table-hover table-condensed table-bordered" style="width: auto !important; ">
 <caption>
 Table 2. SINE family breakdown
@@ -3325,8 +3427,8 @@ Total
 </tbody>
 </table>
 </div>
-<div id="line-families" class="section level2" number="2.2">
-<h2><span class="header-section-number">2.2</span> LINE Families</h2>
+<div id="line-families" class="section level2" number="3.2">
+<h2><span class="header-section-number">3.2</span> LINE Families</h2>
 <table class="table table-striped table-hover table-condensed table-bordered" style="width: auto !important; ">
 <caption>
 Table 3. LINE family breakdown
@@ -3509,35 +3611,44 @@ Total
 <hr />
 </div>
 </div>
-<div id="liftover" class="section level1" number="3">
-<h1><span class="header-section-number">3</span> hg38 → CHM13 Liftover
-Results</h1>
-<p>All <strong>5,683,690</strong> hg38 RepeatMasker loci were lifted to
-T2T-CHM13 coordinates using CrossMap v0.7.0 with the UCSC hg38→hs1 chain
-file.</p>
-<div id="summary" class="section level2" number="3.1">
-<h2><span class="header-section-number">3.1</span> Summary</h2>
+<div id="liftover" class="section level1" number="4">
+<h1><span class="header-section-number">4</span> Liftover Results</h1>
+<div id="both-directions" class="section level2" number="4.1">
+<h2><span class="header-section-number">4.1</span> Summary: Both
+Directions</h2>
 <table class="table table-striped table-hover table-condensed table-bordered" style="width: auto !important; ">
 <caption>
-Table 4. Liftover summary
+Table 6. Liftover summary — both directions
 </caption>
 <thead>
 <tr>
 <th style="text-align:left;">
-Outcome
+Direction
 </th>
 <th style="text-align:right;">
-Count
+Source loci
 </th>
 <th style="text-align:right;">
-% of hg38 total
+Mapped
+</th>
+<th style="text-align:right;">
+Mapped %
+</th>
+<th style="text-align:right;">
+Unmapped (assembly-specific)
+</th>
+<th style="text-align:right;">
+Unmapped %
 </th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td style="text-align:left;">
-Mapped
+hg38 → CHM13
+</td>
+<td style="text-align:right;">
+5,683,690
 </td>
 <td style="text-align:right;">
 5,624,757
@@ -3545,44 +3656,52 @@ Mapped
 <td style="text-align:right;">
 99%
 </td>
-</tr>
-<tr>
-<td style="text-align:left;font-weight: bold;color: white !important;background-color: rgba(192, 57, 43, 255) !important;">
-Unmapped (hg38-specific)
-</td>
-<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(192, 57, 43, 255) !important;">
+<td style="text-align:right;">
 58,933
 </td>
-<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(192, 57, 43, 255) !important;">
+<td style="text-align:right;">
 1%
 </td>
 </tr>
 <tr>
-<td style="text-align:left;font-weight: bold;background-color: rgba(240, 240, 240, 255) !important;">
-Total
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: rgba(142, 68, 173, 255) !important;">
+CHM13 → hg38
 </td>
-<td style="text-align:right;font-weight: bold;background-color: rgba(240, 240, 240, 255) !important;">
-5,683,690
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(142, 68, 173, 255) !important;">
+5,590,282
 </td>
-<td style="text-align:right;font-weight: bold;background-color: rgba(240, 240, 240, 255) !important;">
-100%
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(142, 68, 173, 255) !important;">
+5,501,048
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(142, 68, 173, 255) !important;">
+98.4%
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(142, 68, 173, 255) !important;">
+89,234
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(142, 68, 173, 255) !important;">
+1.6%
 </td>
 </tr>
 </tbody>
 </table>
 <blockquote>
-<p><strong>58,933 hg38 loci have no equivalent position in
-CHM13.</strong> These represent a mix of: hg38 assembly errors,
-collapsed repeats resolved differently in T2T, and genuine polymorphic
-insertions absent from CHM13 (this individual’s genome).</p>
+<p><strong>CHM13 has more total unmapped loci (89,234 vs
+58,933)</strong>, but this is almost entirely driven by Satellite
+repeats in centromeres newly resolved by T2T sequencing — not by mobile
+TE insertions. For LINE/SINE elements specifically, hg38 has
+<strong>2.7× more</strong> assembly-specific loci than CHM13 (see
+Section 4.4).</p>
 </blockquote>
 </div>
-<div id="unmapped-elements-by-class" class="section level2" number="3.2">
-<h2><span class="header-section-number">3.2</span> Unmapped Elements by
-Class</h2>
+<div id="hg38-unmapped-class" class="section level2" number="4.2">
+<h2><span class="header-section-number">4.2</span> hg38 → CHM13:
+Unmapped by Class</h2>
+<p>These are loci annotated in hg38 with no syntenic counterpart in
+CHM13.</p>
 <table class="table table-striped table-hover table-condensed table-bordered" style="width: auto !important; ">
 <caption>
-Table 4a. Unmapped elements by class
+Table 4a. hg38-specific unmapped elements by class
 </caption>
 <thead>
 <tr>
@@ -3744,9 +3863,9 @@ snRNA
 </tbody>
 </table>
 </div>
-<div id="top-20-unmapped-subfamilies" class="section level2" number="3.3">
-<h2><span class="header-section-number">3.3</span> Top 20 Unmapped
-Subfamilies</h2>
+<div id="hg38-top-subfam" class="section level2" number="4.3">
+<h2><span class="header-section-number">4.3</span> hg38 → CHM13: Top 20
+Unmapped Subfamilies</h2>
 <table class="table table-striped table-hover table-condensed table-bordered" style="width: auto !important; ">
 <caption>
 Table 4b. Top 20 hg38-specific (unmapped) subfamilies
@@ -3987,11 +4106,508 @@ A-rich
 </tr>
 </tbody>
 </table>
+</div>
+<div id="chm13-unmapped-class" class="section level2" number="4.4">
+<h2><span class="header-section-number">4.4</span> CHM13 → hg38:
+Unmapped by Class</h2>
+<p>These are loci annotated in CHM13 with no syntenic counterpart in
+hg38. Note that <strong>Satellite</strong> and
+<strong>Simple_repeat</strong> classes dominate — these are centromeric
+and pericentromeric repeats that T2T resolved for the first time but
+that exist in hg38 only as collapsed or absent sequence.</p>
+<table class="table table-striped table-hover table-condensed table-bordered" style="width: auto !important; ">
+<caption>
+Table 7. CHM13-specific unmapped elements by class
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+Class
+</th>
+<th style="text-align:right;">
+Unmapped count
+</th>
+<th style="text-align:right;">
+% of unmapped
+</th>
+<th style="text-align:right;">
+% of CHM13 class total
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: rgba(192, 57, 43, 255) !important;">
+Satellite
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(192, 57, 43, 255) !important;">
+36,944
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(192, 57, 43, 255) !important;">
+41.4%
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(192, 57, 43, 255) !important;">
+78.3%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Simple_repeat
+</td>
+<td style="text-align:right;">
+36,111
+</td>
+<td style="text-align:right;">
+40.5%
+</td>
+<td style="text-align:right;">
+4.8%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+SINE
+</td>
+<td style="text-align:right;">
+10,647
+</td>
+<td style="text-align:right;">
+11.9%
+</td>
+<td style="text-align:right;">
+0.6%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+LINE
+</td>
+<td style="text-align:right;">
+2,508
+</td>
+<td style="text-align:right;">
+2.8%
+</td>
+<td style="text-align:right;">
+0.2%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Unknown
+</td>
+<td style="text-align:right;">
+1,098
+</td>
+<td style="text-align:right;">
+1.2%
+</td>
+<td style="text-align:right;">
+4.7%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+LTR
+</td>
+<td style="text-align:right;">
+1,056
+</td>
+<td style="text-align:right;">
+1.2%
+</td>
+<td style="text-align:right;">
+0.1%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+DNA
+</td>
+<td style="text-align:right;">
+474
+</td>
+<td style="text-align:right;">
+0.5%
+</td>
+<td style="text-align:right;">
+0.1%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Retroposon
+</td>
+<td style="text-align:right;">
+191
+</td>
+<td style="text-align:right;">
+0.2%
+</td>
+<td style="text-align:right;">
+2.6%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Low_complexity
+</td>
+<td style="text-align:right;">
+184
+</td>
+<td style="text-align:right;">
+0.2%
+</td>
+<td style="text-align:right;">
+0.2%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;background-color: rgba(240, 240, 240, 255) !important;">
+Beta
+</td>
+<td style="text-align:right;font-weight: bold;background-color: rgba(240, 240, 240, 255) !important;">
+13
+</td>
+<td style="text-align:right;font-weight: bold;background-color: rgba(240, 240, 240, 255) !important;">
+0%
+</td>
+<td style="text-align:right;font-weight: bold;background-color: rgba(240, 240, 240, 255) !important;">
+0.5%
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="chm13-top-subfam" class="section level2" number="4.5">
+<h2><span class="header-section-number">4.5</span> CHM13 → hg38: Top 20
+Unmapped Subfamilies</h2>
+<table class="table table-striped table-hover table-condensed table-bordered" style="width: auto !important; ">
+<caption>
+Table 8. Top 20 CHM13-specific (unmapped) subfamilies
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+Subfamily
+</th>
+<th style="text-align:right;">
+Count
+</th>
+<th style="text-align:right;">
+% of unmapped
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+HSATII
+</td>
+<td style="text-align:right;">
+28,870
+</td>
+<td style="text-align:right;">
+38.4%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(ATCGAATGGA)n
+</td>
+<td style="text-align:right;">
+12,509
+</td>
+<td style="text-align:right;">
+16.6%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AluY
+</td>
+<td style="text-align:right;">
+6,672
+</td>
+<td style="text-align:right;">
+8.9%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+HSATI
+</td>
+<td style="text-align:right;">
+6,307
+</td>
+<td style="text-align:right;">
+8.4%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(GATTCCATTC)n
+</td>
+<td style="text-align:right;">
+4,595
+</td>
+<td style="text-align:right;">
+6.1%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(TATATAA)n
+</td>
+<td style="text-align:right;">
+4,481
+</td>
+<td style="text-align:right;">
+6%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(TGGAA)n
+</td>
+<td style="text-align:right;">
+1,831
+</td>
+<td style="text-align:right;">
+2.4%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(ATGGA)n
+</td>
+<td style="text-align:right;">
+1,570
+</td>
+<td style="text-align:right;">
+2.1%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(AATGG)n
+</td>
+<td style="text-align:right;">
+1,568
+</td>
+<td style="text-align:right;">
+2.1%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(TA)n
+</td>
+<td style="text-align:right;">
+1,393
+</td>
+<td style="text-align:right;">
+1.9%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(ATCAAATGGA)n
+</td>
+<td style="text-align:right;">
+1,051
+</td>
+<td style="text-align:right;">
+1.4%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Alu
+</td>
+<td style="text-align:right;">
+779
+</td>
+<td style="text-align:right;">
+1%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AluJb
+</td>
+<td style="text-align:right;">
+619
+</td>
+<td style="text-align:right;">
+0.8%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(GAATG)n
+</td>
+<td style="text-align:right;">
+504
+</td>
+<td style="text-align:right;">
+0.7%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ALR
+</td>
+<td style="text-align:right;">
+490
+</td>
+<td style="text-align:right;">
+0.7%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AluSx
+</td>
+<td style="text-align:right;">
+432
+</td>
+<td style="text-align:right;">
+0.6%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(ATTCC)n
+</td>
+<td style="text-align:right;">
+430
+</td>
+<td style="text-align:right;">
+0.6%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ACRO1
+</td>
+<td style="text-align:right;">
+372
+</td>
+<td style="text-align:right;">
+0.5%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+COMP-subunit_ACRO_rnd-5_family-38
+</td>
+<td style="text-align:right;">
+372
+</td>
+<td style="text-align:right;">
+0.5%
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+(TGATTCCATT)n
+</td>
+<td style="text-align:right;">
+331
+</td>
+<td style="text-align:right;">
+0.4%
+</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>HSATII and (ATCGAATGGA)n</strong> account for the majority of
+CHM13-specific elements — these are human satellite II repeats
+concentrated in pericentromeric regions, which T2T-CHM13 resolved
+completely for the first time. Their “absence” from hg38 is an assembly
+artifact, not a biological insertion difference.</p>
+</blockquote>
+</div>
+<div id="linesine-comparison" class="section level2" number="4.6">
+<h2><span class="header-section-number">4.6</span> LINE/SINE-Specific
+Comparison</h2>
+<p>Restricting to LINE and SINE elements removes the
+satellite/centromere signal and isolates the biologically relevant
+TE-insertion comparison.</p>
+<table class="table table-striped table-hover table-condensed table-bordered" style="width: auto !important; ">
+<caption>
+Table 9. LINE/SINE-only assembly-specific comparison
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+Direction
+</th>
+<th style="text-align:right;">
+Source LINE/SINE loci
+</th>
+<th style="text-align:right;">
+Unmapped (assembly-specific)
+</th>
+<th style="text-align:right;">
+% unmapped
+</th>
+<th style="text-align:right;">
+Fold vs CHM13
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: rgba(39, 174, 96, 255) !important;">
+hg38 → CHM13 (LINE/SINE only)
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(39, 174, 96, 255) !important;">
+3,525,112
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(39, 174, 96, 255) !important;">
+36,480
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(39, 174, 96, 255) !important;">
+0.96%
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(39, 174, 96, 255) !important;">
+2.7
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;background-color: rgba(240, 240, 240, 255) !important;">
+CHM13 → hg38 (LINE/SINE only)
+</td>
+<td style="text-align:right;font-weight: bold;background-color: rgba(240, 240, 240, 255) !important;">
+3,618,644
+</td>
+<td style="text-align:right;font-weight: bold;background-color: rgba(240, 240, 240, 255) !important;">
+13,155
+</td>
+<td style="text-align:right;font-weight: bold;background-color: rgba(240, 240, 240, 255) !important;">
+0.36%
+</td>
+<td style="text-align:right;font-weight: bold;background-color: rgba(240, 240, 240, 255) !important;">
+1.0
+</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Among LINE and SINE elements, hg38 has 2.7× more
+assembly-specific loci than CHM13</strong> (0.96% vs 0.36% unmapped
+rate). This is the primary TE-biology signal: hg38 contains more
+polymorphic or unresolved TE insertions than the T2T reference
+genome.</p>
+</blockquote>
 <hr />
 </div>
 </div>
-<div id="alu-age" class="section level1" number="4">
-<h1><span class="header-section-number">4</span> Young vs. Old Alu — The
+<div id="alu-age" class="section level1" number="5">
+<h1><span class="header-section-number">5</span> Young vs. Old Alu — The
 Key Finding</h1>
 <p>Among Alu elements that failed liftover, <strong>young AluY
 subfamilies are massively over-represented</strong> in the
@@ -4190,8 +4806,8 @@ lack fixed genomic addresses across the human population.</p>
 </blockquote>
 <hr />
 </div>
-<div id="methods" class="section level1" number="5">
-<h1><span class="header-section-number">5</span> Methods</h1>
+<div id="methods" class="section level1" number="6">
+<h1><span class="header-section-number">6</span> Methods</h1>
 <table>
 <colgroup>
 <col width="40%" />
@@ -4219,17 +4835,18 @@ lack fixed genomic addresses across the human population.</p>
 </tr>
 <tr class="even">
 <td>Chain files</td>
-<td>UCSC hg38→hs1 and hs1→hg38</td>
+<td>UCSC <code>hg38ToHs1.over.chain.gz</code> and
+<code>hs1ToHg38.over.chain.gz</code></td>
 </tr>
 <tr class="odd">
-<td>Platform</td>
+<td>Architecture</td>
 <td>aarch64 Linux (UCSC liftOver binary not available; CrossMap used
 instead)</td>
 </tr>
 <tr class="even">
 <td>Reference</td>
 <td>Hoyt et al. 2022, <em>Science</em> 376, eabk3084 (reported 20,427
-CHM13-specific TEs across all classes)</td>
+CHM13-specific TEs)</td>
 </tr>
 </tbody>
 </table>
