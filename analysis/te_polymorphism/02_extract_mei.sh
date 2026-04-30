@@ -33,7 +33,8 @@ extract_mei() {
         | awk 'BEGIN{OFS="\t"} {
             end = ($3 == "." || $3 == "") ? $2+1 : $3
             af  = ($5 == "." || $5 == "") ? "NA" : $5
-            print $1, $2-1, end, $4, af, $6
+            chrom = ($1 ~ /^chr/) ? $1 : "chr"$1
+            print chrom, $2-1, end, $4, af, $6
         }' > "${out_bed}"
     else
         zcat "${VCF}" \
@@ -52,7 +53,8 @@ extract_mei() {
                 if (fields[i] ~ /^END=/) { end_pos = substr(fields[i], 5)+0; break }
             }
             if (end_pos <= $2) end_pos = $2 + 1
-            print $1, $2-1, end_pos, $3, af, svt
+            chrom = ($1 ~ /^chr/) ? $1 : "chr"$1
+            print chrom, $2-1, end_pos, $3, af, svt
         }' > "${out_bed}"
     fi
 

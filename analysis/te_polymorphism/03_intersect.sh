@@ -8,9 +8,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RESULTS_DIR="${SCRIPT_DIR}/results"
 
 CANDIDATES="${RESULTS_DIR}/hg38_specific_gap_distal.bed"
-MEI_ALL="${RESULTS_DIR}/mei_all.bed"
-MEI_ALU="${RESULTS_DIR}/mei_alu.bed"
-MEI_LINE1="${RESULTS_DIR}/mei_line1.bed"
+MEI_ALL="${RESULTS_DIR}/mei_all_hg38.bed"
+MEI_ALU="${RESULTS_DIR}/mei_alu_hg38.bed"
+MEI_LINE1="${RESULTS_DIR}/mei_line1_hg38.bed"
 DBRIP="${RESULTS_DIR}/dbrip.bed"
 
 for f in "${CANDIDATES}" "${MEI_ALL}"; do
@@ -31,7 +31,7 @@ echo "[03]   ${HIT_COUNT} / ${CAND_COUNT} candidates overlap any 1000G MEI"
 
 # Per-class breakdown
 for cls in alu line1 sva; do
-    mei_bed="${RESULTS_DIR}/mei_${cls}.bed"
+    mei_bed="${RESULTS_DIR}/mei_${cls}_hg38.bed"
     [[ -f "${mei_bed}" ]] || continue
     out="${RESULTS_DIR}/hits_1000g_${cls}.bed"
     bedtools intersect -a "${CANDIDATES}" -b "${mei_bed}" -wa -wb > "${out}"
@@ -42,8 +42,8 @@ done
 # ── Low-frequency MEI hits (AF < 0.05 = rare / population-private) ──────────
 echo "[03] Filtering for low-frequency MEIs (AF < 0.05)..."
 awk 'BEGIN{OFS="\t"} {
-    # column 11 (6 candidate cols + 5th MEI col) = AF
-    af = $(NF-1)
+    # candidates: 11 cols; MEI: col5 (0-based) = AF → field 16 (1-based)
+    af = $16
     if (af == "NA" || af+0 < 0.05) print
 }' "${RESULTS_DIR}/hits_1000g_any.bed" \
 > "${RESULTS_DIR}/hits_1000g_lowAF.bed"
@@ -52,7 +52,7 @@ echo "[03]   ${LOW_COUNT} candidates overlap low-frequency MEIs (AF < 0.05)"
 
 # ── High-frequency MEI hits (AF >= 0.5 = likely fixed in hg38 by design) ────
 awk 'BEGIN{OFS="\t"} {
-    af = $(NF-1)
+    af = $16
     if (af != "NA" && af+0 >= 0.5) print
 }' "${RESULTS_DIR}/hits_1000g_any.bed" \
 > "${RESULTS_DIR}/hits_1000g_highAF.bed"

@@ -52,9 +52,10 @@ def af_bin(af: float | None) -> str:
 
 def main():
     # ── Load files ────────────────────────────────────────────────────────────
-    cand_path = RESULTS / "hg38_specific_gap_distal.bed"
-    hits_path = RESULTS / "hits_1000g_any.bed"
-    nohit_path = RESULTS / "no_mei_overlap.bed"
+    cand_path   = RESULTS / "hg38_specific_gap_distal.bed"
+    hits_path   = RESULTS / "hits_1000g_any.bed"
+    hits500_path = RESULTS / "hits_1000g_500bp.bed"
+    nohit_path  = RESULTS / "no_mei_overlap.bed"
     summary_tsv = RESULTS / "intersection_summary.tsv"
 
     if not cand_path.exists():
@@ -62,9 +63,10 @@ def main():
     if not hits_path.exists():
         sys.exit(f"ERROR: {hits_path} not found. Run step 03 first.")
 
-    candidates = load_bed(cand_path)
-    hits_raw   = load_bed(hits_path)
-    no_hits    = load_bed(nohit_path) if nohit_path.exists() else []
+    candidates  = load_bed(cand_path)
+    hits_raw    = load_bed(hits_path)
+    hits500_raw = load_bed(hits500_path) if hits500_path.exists() else []
+    no_hits     = load_bed(nohit_path) if nohit_path.exists() else []
 
     n_cand = len(candidates)
 
@@ -81,10 +83,10 @@ def main():
 
     # ── AF distribution ───────────────────────────────────────────────────────
     # hits_1000g_any.bed layout:
-    #   cols 0-5  = candidate (chr, start, end, name, score, strand)
-    #   cols 6-11 = MEI (chr, start, end, id, AF, SVTYPE)
-    af_col = 10  # 0-based index for AF in combined row
-    svtype_col = 11
+    #   cols 0-10  = candidate (11 cols from rmsk BED)
+    #   cols 11-16 = MEI (chr, start, end, id, AF, SVTYPE)
+    af_col = 15  # 0-based index for AF in combined row
+    svtype_col = 16
 
     af_bins: Counter[str] = Counter()
     svtype_counts: Counter[str] = Counter()
@@ -136,9 +138,12 @@ def main():
     print("=" * 60)
     print("TE POLYMORPHISM CROSS-REFERENCE SUMMARY")
     print("=" * 60)
+    n_hits_500 = len({tuple(r[:3]) for r in hits500_raw})
+
     print(f"\nGap-distal hg38-specific LINE/SINE candidates: {n_cand:,}")
-    print(f"Overlap any 1000G MEI:  {n_hits:,}  ({pct(n_hits, n_cand)})")
-    print(f"No MEI overlap:         {len(no_hits):,}  ({pct(len(no_hits), n_cand)})")
+    print(f"Overlap any 1000G MEI (exact):     {n_hits:,}  ({pct(n_hits, n_cand)})")
+    print(f"Overlap any 1000G MEI (±500bp):    {n_hits_500:,}  ({pct(n_hits_500, n_cand)})")
+    print(f"No MEI overlap (exact):            {len(no_hits):,}  ({pct(len(no_hits), n_cand)})")
 
     print("\n── Allele-frequency distribution of MEI hits ──")
     for label in ["<0.01  (rare)", "0.01–0.05 (low)", "0.05–0.10",
@@ -172,8 +177,10 @@ def main():
         w = csv.writer(fh, delimiter="\t")
         w.writerow(["metric", "value"])
         w.writerow(["n_candidates", n_cand])
-        w.writerow(["n_mei_overlap", n_hits])
-        w.writerow(["pct_mei_overlap", f"{n_hits*100/n_cand:.2f}"])
+        w.writerow(["n_mei_overlap_exact", n_hits])
+        w.writerow(["pct_mei_overlap_exact", f"{n_hits*100/n_cand:.2f}"])
+        w.writerow(["n_mei_overlap_500bp", n_hits_500])
+        w.writerow(["pct_mei_overlap_500bp", f"{n_hits_500*100/n_cand:.2f}"])
         w.writerow(["n_no_overlap", len(no_hits)])
         w.writerow(["pct_no_overlap", f"{len(no_hits)*100/n_cand:.2f}"])
         if af_values:

@@ -120,3 +120,6 @@ analysis/liftover/results/*.log
 # Keep the rendered HTML reports
 !analysis/liftover/results/REPORT.html
 !analysis/liftover/results/REPORT2.html
+
+analysis/te_polymorphism/data/
+analysis/te_polymorphism/results/

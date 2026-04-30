@@ -36,18 +36,21 @@ fi
 GAP_COUNT=$(wc -l < "${GAPS_BED}")
 echo "[01] Gaps BED: ${GAP_COUNT} records"
 
-# Extend each gap by 50 kb on each side, then subtract to find gap-distal loci.
-# "Gap-distal" = no part of the locus within 50 kb of any gap.
 GAP_DISTAL="${RESULTS_DIR}/hg38_specific_gap_distal.bed"
 
+# Sort both files for bedtools closest, then keep loci whose nearest gap > 50 kb.
+UNMAPPED_SORTED="${DATA_DIR}/unmapped_sorted.bed"
+GAPS_SORTED="${DATA_DIR}/gaps_sorted.bed"
+sort -k1,1 -k2,2n "${UNMAPPED}"  > "${UNMAPPED_SORTED}"
+sort -k1,1 -k2,2n "${GAPS_BED}"  > "${GAPS_SORTED}"
+
 echo "[01] Filtering for loci >50 kb from any hg38 gap..."
-bedtools slop -i "${GAPS_BED}" -g <(
-    # Build chrom sizes on-the-fly from the unmapped BED itself (conservative)
-    awk 'BEGIN{OFS="\t"} {if(!seen[$1]++){sizes[$1]=$1} end[$1]=(end[$1]>$3?end[$1]:$3)} END{for(c in sizes) print c, end[c]+1}' \
-        "${UNMAPPED}"
-) -b 50000 2>/dev/null \
-| bedtools subtract -a "${UNMAPPED}" -b stdin -A \
-> "${GAP_DISTAL}"
+# bedtools closest -d appends the distance to nearest gap as the last column.
+# -t first: report only the closest gap per locus.
+# Keep rows where distance (last col) > 50000.
+bedtools closest -a "${UNMAPPED_SORTED}" -b "${GAPS_SORTED}" -d -t first \
+    | awk '$NF > 50000 {print $1"\t"$2"\t"$3"\t"$4"\t"$5"\t"$6"\t"$7"\t"$8"\t"$9"\t"$10"\t"$11}' \
+    > "${GAP_DISTAL}"
 
 COUNT=$(wc -l < "${GAP_DISTAL}")
 TOTAL=$(wc -l < "${UNMAPPED}")
