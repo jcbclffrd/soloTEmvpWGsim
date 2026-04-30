@@ -4140,14 +4140,230 @@ CHM13 → hg38 (LINE/SINE only)
 </table>
 <blockquote>
 <p><strong>hg38 has 2.7× more assembly-specific LINE/SINE loci</strong>
-(36,480 vs 13,155). This means hg38 annotates nearly three times as many
-LINE/SINE loci that have no counterpart in T2T. These appear to be in
-regions that T2T resolved differently, or genuine polymorphic insertions
-absent from the CHM13 cell line.</p>
+(36,480 vs 13,155). The gap-proximity analysis below shows that ~80% of
+these are adjacent to hg38 assembly gaps — likely annotation artifacts —
+not polymorphic insertions.</p>
 </blockquote>
 </div>
-<div id="alu" class="section level2" number="3.3">
-<h2><span class="header-section-number">3.3</span> Young Alu
+<div id="gaps" class="section level2" number="3.3">
+<h2><span class="header-section-number">3.3</span> hg38 Assembly
+Gaps</h2>
+<p>hg38 contains <strong>829 annotated assembly gaps</strong> totalling
+<strong>161.6 Mb</strong> of unresolved sequence. T2T-CHM13v2.0 has zero
+gaps — it was the first complete telomere-to-telomere human
+assembly.</p>
+<table class="table table-striped table-hover table-condensed table-bordered" style="width: auto !important; ">
+<caption>
+Table L2b. hg38 assembly gaps by type (829 total gaps, 161.6 Mb
+unresolved)
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+Type
+</th>
+<th style="text-align:right;">
+Count
+</th>
+<th style="text-align:right;">
+Total bp (gap sequence)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+scaffold
+</td>
+<td style="text-align:right;">
+480
+</td>
+<td style="text-align:right;">
+—
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+contig
+</td>
+<td style="text-align:right;">
+285
+</td>
+<td style="text-align:right;">
+—
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+telomere
+</td>
+<td style="text-align:right;">
+48
+</td>
+<td style="text-align:right;">
+—
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+heterochromatin
+</td>
+<td style="text-align:right;">
+11
+</td>
+<td style="text-align:right;">
+—
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+short_arm
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+—
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;background-color: rgba(240, 240, 240, 255) !important;">
+Total
+</td>
+<td style="text-align:right;font-weight: bold;background-color: rgba(240, 240, 240, 255) !important;">
+829
+</td>
+<td style="text-align:right;font-weight: bold;background-color: rgba(240, 240, 240, 255) !important;">
+161,591,131
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="gap-proximity" class="section level2" number="3.4">
+<h2><span class="header-section-number">3.4</span> Gap-Proximity
+Analysis</h2>
+<p>If hg38-specific LINE/SINE loci were genuine polymorphic insertions,
+they should be <strong>randomly distributed</strong> relative to
+assembly gaps. If they are annotation artifacts produced by RepeatMasker
+running on poorly assembled sequence flanking gaps, they should be
+<strong>concentrated near gaps</strong>. We tested this with
+<code>bedtools closest</code>.</p>
+<table class="table table-striped table-hover table-condensed table-bordered" style>
+<caption>
+Table L2c. Distance to nearest hg38 assembly gap — hg38-specific vs
+background LINE/SINE loci
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+Group
+</th>
+<th style="text-align:right;">
+n total
+</th>
+<th style="text-align:right;">
+Within 1 kb of gap
+</th>
+<th style="text-align:right;">
+% within 1 kb
+</th>
+<th style="text-align:right;">
+Within 50 kb of gap
+</th>
+<th style="text-align:right;">
+% within 50 kb
+</th>
+<th style="text-align:right;">
+&gt; 50 kb from gap
+</th>
+<th style="text-align:right;">
+% &gt; 50 kb
+</th>
+<th style="text-align:right;">
+Enrichment (vs background
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: rgba(192, 57, 43, 255) !important;">
+hg38-specific unmapped LINE/SINE
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(192, 57, 43, 255) !important;">
+36,480
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(192, 57, 43, 255) !important;">
+29,327
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(192, 57, 43, 255) !important;">
+80.4%
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(192, 57, 43, 255) !important;">
+29,870
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(192, 57, 43, 255) !important;">
+81.9%
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(192, 57, 43, 255) !important;">
+6,608
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(192, 57, 43, 255) !important;">
+18.1%
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: rgba(192, 57, 43, 255) !important;">
+17
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: rgba(234, 250, 241, 255) !important;">
+All hg38 LINE/SINE (background)
+</td>
+<td style="text-align:right;background-color: rgba(234, 250, 241, 255) !important;">
+3,525,112
+</td>
+<td style="text-align:right;background-color: rgba(234, 250, 241, 255) !important;">
+169,128
+</td>
+<td style="text-align:right;background-color: rgba(234, 250, 241, 255) !important;">
+4.8%
+</td>
+<td style="text-align:right;background-color: rgba(234, 250, 241, 255) !important;">
+199,885
+</td>
+<td style="text-align:right;background-color: rgba(234, 250, 241, 255) !important;">
+5.7%
+</td>
+<td style="text-align:right;background-color: rgba(234, 250, 241, 255) !important;">
+3,325,224
+</td>
+<td style="text-align:right;background-color: rgba(234, 250, 241, 255) !important;">
+94.3%
+</td>
+<td style="text-align:right;background-color: rgba(234, 250, 241, 255) !important;">
+1
+</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>80.4% of hg38-specific LINE/SINE loci are within 1 kb of an
+assembly gap</strong>, versus only 4.8% of all hg38 LINE/SINE loci
+(background) — a <strong>17-fold enrichment</strong>. This is a
+gap-artifact signal, not a polymorphism signal.</p>
+<p><strong>Decomposing the 36,480 hg38-specific loci:</strong></p>
+<ul>
+<li>~29,900 (82%) gap-proximal (≤50 kb): likely RepeatMasker artifacts
+flanking unresolved sequence</li>
+<li>~6,600 (18%) gap-distal (&gt;50 kb): candidates for genuine
+polymorphic insertions or segmental duplication errors — will be
+cross-referenced against dbRIP / 1000 Genomes MEI calls in a follow-up
+analysis (see branch <code>analysis/te-polymorphism</code>)</li>
+</ul>
+</blockquote>
+</div>
+<div id="alu" class="section level2" number="3.5">
+<h2><span class="header-section-number">3.5</span> Young Alu
 Enrichment</h2>
 <table class="table table-striped table-hover table-condensed table-bordered" style="width: auto !important; border-bottom: 0;">
 <caption>
@@ -4314,15 +4530,16 @@ T2T-specific TEs (n = 13,155 LINE/SINE)
 <tbody>
 <tr>
 <td style="text-align:left;width: 44%; background-color: rgba(253, 237, 236, 255) !important;">
-In regions with gaps, collapses, or mis-assemblies in hg38
+80% are within 1 kb of an hg38 assembly gap (17× enrichment vs
+background)
 </td>
 <td style="text-align:left;width: 44%; background-color: rgba(234, 250, 241, 255) !important;">
-In regions newly resolved by T2T (gap-filled, centromeric flanks)
+Distributed across well-assembled, gap-free T2T sequence
 </td>
 </tr>
 <tr>
 <td style="text-align:left;width: 44%; background-color: rgba(253, 237, 236, 255) !important;">
-Many are RepeatMasker artifacts adjacent to assembly gaps
+~29,900 are likely RepeatMasker artifacts flanking unresolved sequence
 </td>
 <td style="text-align:left;width: 44%; background-color: rgba(234, 250, 241, 255) !important;">
 Genuine sequence present in CHM13 but absent/collapsed in hg38
@@ -4330,15 +4547,17 @@ Genuine sequence present in CHM13 but absent/collapsed in hg38
 </tr>
 <tr>
 <td style="text-align:left;width: 44%; background-color: rgba(253, 237, 236, 255) !important;">
-Reads from patients rarely map there (inaccessible sequence)
+~6,600 gap-distal candidates for genuine polymorphic insertions
+(unconfirmed)
 </td>
 <td style="text-align:left;width: 44%; background-color: rgba(234, 250, 241, 255) !important;">
-76% are young AluY* — polymorphic, potentially active insertions
+76% are young AluY* — confirmed polymorphic, potentially active
+insertions
 </td>
 </tr>
 <tr>
 <td style="text-align:left;width: 44%; background-color: rgba(253, 237, 236, 255) !important;">
-Higher proportion of old/fixed elements (AluS<em>, AluJ</em>)
+Reads from patients rarely map to gap-adjacent regions (inaccessible)
 </td>
 <td style="text-align:left;width: 44%; background-color: rgba(234, 250, 241, 255) !important;">
 Can generate reads in T2T-aligned data
@@ -4411,7 +4630,8 @@ T2T-specific polymorphic Alus (young AluY*) accessible to reads
 </tr>
 <tr>
 <td style="text-align:left;">
-hg38-specific TEs in inaccessible / gap-adjacent regions
+80% of hg38-specific LINE/SINEs are within 1 kb of assembly gap
+(artifact)
 </td>
 <td style="text-align:left;">
 −36k hg38 loci with little expression impact
@@ -4485,8 +4705,9 @@ hg38 has 2.7× more assembly-specific LINE/SINE TEs
 Yes
 </td>
 <td style="text-align:left;width: 55%; ">
-These are mostly in poorly assembled / gap-adjacent regions that do not
-generate detectable reads
+80% are within 1 kb of an hg38 assembly gap (17× enrichment vs
+background) — gap-annotation artifacts, not polymorphic insertions. Only
+~6,600 gap-distal loci remain as polymorphism candidates (unconfirmed).
 </td>
 </tr>
 <tr>

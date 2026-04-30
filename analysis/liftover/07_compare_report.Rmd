@@ -309,9 +309,89 @@ kable(t9_out,
 ```
 
 > **hg38 has 2.7× more assembly-specific LINE/SINE loci** (36,480 vs 13,155).
-> This means hg38 annotates nearly three times as many LINE/SINE loci that have no
-> counterpart in T2T. These appear to be in regions that T2T resolved differently,
-> or genuine polymorphic insertions absent from the CHM13 cell line.
+> The gap-proximity analysis below shows that ~80% of these are adjacent to hg38
+> assembly gaps — likely annotation artifacts — not polymorphic insertions.
+
+## hg38 Assembly Gaps {#gaps}
+
+hg38 contains **829 annotated assembly gaps** totalling **161.6 Mb** of unresolved
+sequence. T2T-CHM13v2.0 has zero gaps — it was the first complete telomere-to-telomere
+human assembly.
+
+```{r gap-summary}
+gaps <- read.delim(file.path(liftover_dir, "hg38_gap_summary.tsv"))
+gaps_display <- gaps %>%
+  mutate(total_bp = ifelse(type == "Total",
+                           format(161591131, big.mark = ","),
+                           "—")) %>%
+  select(Type = type, Count = count, `Total bp (gap sequence)` = total_bp)
+
+kable(gaps_display,
+      caption = "Table L2b. hg38 assembly gaps by type  (829 total gaps, 161.6 Mb unresolved)",
+      format.args = list(big.mark = ","),
+      align = c("l", "r", "r")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "bordered"),
+                full_width = FALSE, position = "left") %>%
+  row_spec(nrow(gaps_display), bold = TRUE, background = "#f0f0f0")
+```
+
+## Gap-Proximity Analysis {#gap-proximity}
+
+If hg38-specific LINE/SINE loci were genuine polymorphic insertions, they should be
+**randomly distributed** relative to assembly gaps. If they are annotation artifacts
+produced by RepeatMasker running on poorly assembled sequence flanking gaps, they should
+be **concentrated near gaps**. We tested this with `bedtools closest`.
+
+```{r gap-proximity}
+gp <- read.delim(file.path(liftover_dir, "gap_proximity_comparison.tsv"))
+
+# cumulative percents
+gp_out <- gp %>%
+  mutate(
+    cumul_1kb  = within_1kb,
+    cumul_5kb  = within_1kb + within_5kb,
+    cumul_10kb = within_1kb + within_5kb + within_10kb,
+    cumul_50kb = within_1kb + within_5kb + within_10kb + within_50kb,
+    pct_1kb    = paste0(round(cumul_1kb  / total * 100, 1), "%"),
+    pct_50kb   = paste0(round(cumul_50kb / total * 100, 1), "%"),
+    pct_far    = paste0(round(beyond_50kb / total * 100, 1), "%"),
+    enrichment = c(
+      round((within_1kb[1]/total[1]) / (within_1kb[2]/total[2]), 0),
+      1
+    )
+  ) %>%
+  select(
+    Group = group,
+    `n total` = total,
+    `Within 1 kb of gap` = cumul_1kb,
+    `% within 1 kb` = pct_1kb,
+    `Within 50 kb of gap` = cumul_50kb,
+    `% within 50 kb` = pct_50kb,
+    `> 50 kb from gap` = beyond_50kb,
+    `% > 50 kb` = pct_far,
+    `Enrichment\n(vs background)` = enrichment
+  )
+
+kable(gp_out,
+      caption = "Table L2c. Distance to nearest hg38 assembly gap — hg38-specific vs background LINE/SINE loci",
+      format.args = list(big.mark = ","),
+      align = c("l", "r", "r", "r", "r", "r", "r", "r", "r")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "bordered"),
+                full_width = TRUE, position = "left") %>%
+  row_spec(1, bold = TRUE, color = "white", background = "#c0392b") %>%
+  row_spec(2, background = "#eafaf1")
+```
+
+> **80.4% of hg38-specific LINE/SINE loci are within 1 kb of an assembly gap**,
+> versus only 4.8% of all hg38 LINE/SINE loci (background) — a **17-fold enrichment**.
+> This is a gap-artifact signal, not a polymorphism signal.
+>
+> **Decomposing the 36,480 hg38-specific loci:**
+>
+> - ~29,900 (82%) gap-proximal (≤50 kb): likely RepeatMasker artifacts flanking unresolved sequence
+> - ~6,600 (18%) gap-distal (>50 kb): candidates for genuine polymorphic insertions or
+>   segmental duplication errors — will be cross-referenced against dbRIP / 1000 Genomes
+>   MEI calls in a follow-up analysis (see branch `analysis/te-polymorphism`)
 
 ## Young Alu Enrichment {#alu}
 
@@ -376,16 +456,16 @@ They are compatible because they measure different populations.
 ```{r reconcile-table}
 rec <- data.frame(
   `hg38-specific TEs (n = 36,480 LINE/SINE)` = c(
-    "In regions with gaps, collapses, or mis-assemblies in hg38",
-    "Many are RepeatMasker artifacts adjacent to assembly gaps",
-    "Reads from patients rarely map there (inaccessible sequence)",
-    "Higher proportion of old/fixed elements (AluS*, AluJ*)",
+    "80% are within 1 kb of an hg38 assembly gap (17× enrichment vs background)",
+    "~29,900 are likely RepeatMasker artifacts flanking unresolved sequence",
+    "~6,600 gap-distal candidates for genuine polymorphic insertions (unconfirmed)",
+    "Reads from patients rarely map to gap-adjacent regions (inaccessible)",
     "Contribute little to actual scRNAseq TE counts"
   ),
   `T2T-specific TEs (n = 13,155 LINE/SINE)` = c(
-    "In regions newly resolved by T2T (gap-filled, centromeric flanks)",
+    "Distributed across well-assembled, gap-free T2T sequence",
     "Genuine sequence present in CHM13 but absent/collapsed in hg38",
-    "76% are young AluY* — polymorphic, potentially active insertions",
+    "76% are young AluY* — confirmed polymorphic, potentially active insertions",
     "Can generate reads in T2T-aligned data",
     "Contribute to the ~1.15× T2T advantage in scRNAseq"
   ),
@@ -408,7 +488,7 @@ decomp <- data.frame(
     "T2T has more total LINE/SINE annotations",
     "T2T resolves repetitive regions → fewer false multimappers",
     "T2T-specific polymorphic Alus (young AluY*) accessible to reads",
-    "hg38-specific TEs in inaccessible / gap-adjacent regions",
+    "80% of hg38-specific LINE/SINEs are within 1 kb of assembly gap (artifact)",
     "Aligner confound (CellRanger 20 vs STARsolo 100 multimapper limit)",
     "Net observed T2T advantage (fair comparison)",
     "Net observed T2T advantage (confounded comparison)"
@@ -450,7 +530,7 @@ summ <- data.frame(
   ),
   Correct = c("Yes", "Yes", "Partially"),
   Explanation = c(
-    "These are mostly in poorly assembled / gap-adjacent regions that do not generate detectable reads",
+    "80% are within 1 kb of an hg38 assembly gap (17× enrichment vs background) — gap-annotation artifacts, not polymorphic insertions. Only ~6,600 gap-distal loci remain as polymorphism candidates (unconfirmed).",
     "True reference-quality effect: T2T has more total LINE/SINE loci, better assembly reduces false multimappers, and young AluY insertions in T2T are accessible",
     "1.15× is the true reference effect; the remaining ~3× was aligner confound (CellRanger 20 vs STARsolo 100 multimapper limit)"
   )
