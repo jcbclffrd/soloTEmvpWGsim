@@ -66,7 +66,7 @@ extract_attr <- function(attrs, key) {
 
 tx <- tx %>%
   mutate(
-    gene_name  = map_chr(attributes, ~extract_attr(.x, "gene_name")),
+    gene_name  = map_chr(attributes, ~extract_attr(.x, "gene")),
     tx_id      = map_chr(attributes, ~extract_attr(.x, "ID")),
     tx_length  = end - start + 1L,
     chrom      = seqname
