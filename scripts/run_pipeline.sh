@@ -2,17 +2,19 @@
 ##############################################################################
 # Master Pipeline Runner
 #
-# This script runs the complete validation pipeline from start to finish:
-#   1. Select TE loci
-#   2. Extract sequences
-#   3. Create expression profile
-#   4. Simulate reads
-#   5. Add barcodes
-#   6. Align with STARsolo
-#   7. Run soloTE quantification
-#   8. Validate results
+# Runs the complete validation pipeline from start to finish, beginning with
+# an archive-and-clean of previous outputs (step 0).
 #
-# Usage: bash scripts/run_pipeline.sh
+# Usage:
+#   bash scripts/run_pipeline.sh [options]
+#
+# Options:
+#   --no-archive       Delete previous outputs without archiving (faster,
+#                      irreversible). Default: archive before cleaning.
+#   --keep-N N         Keep only the last N timestamped archives per folder
+#                      and remove older ones. Default: 3.
+#   --skip-clean       Skip step 0 entirely (keep previous outputs as-is).
+#                      Useful when re-running a failed step mid-pipeline.
 ##############################################################################
 
 set -e  # Exit on error
@@ -22,14 +24,41 @@ REPO_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
 
 cd "$REPO_ROOT"
 
+# ==============================================================================
+# Parse Arguments
+# ==============================================================================
+ARCHIVE_FLAG=""          # empty → archive with retention default
+KEEP_N=3                 # keep last 3 archives per folder by default
+SKIP_CLEAN=false
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --no-archive)
+            ARCHIVE_FLAG="--no-archive"
+            shift
+            ;;
+        --keep-N)
+            KEEP_N="$2"
+            shift 2
+            ;;
+        --skip-clean)
+            SKIP_CLEAN=true
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Usage: bash scripts/run_pipeline.sh [--no-archive] [--keep-N N] [--skip-clean]"
+            exit 1
+            ;;
+    esac
+done
+
 echo "================================================================================"
 echo "soloTEmvpWGsim - Complete Validation Pipeline"
 echo "================================================================================"
 echo ""
-echo "This will run all 8 pipeline steps sequentially."
-echo "Estimated total runtime: 30-60 minutes"
-echo ""
 echo "Started: $(date)"
+echo "Archive mode: ${ARCHIVE_FLAG:-archive (keep last $KEEP_N runs)}"
 echo ""
 
 # ==============================================================================
@@ -80,14 +109,25 @@ echo "✓ Setup complete, ready to run pipeline"
 echo ""
 
 # ==============================================================================
-# Archive previous run and clean data folders
+# Step 0: Archive previous run and clean data folders
 # ==============================================================================
-echo "================================================================================"
-echo "Step 0/8: Archive previous run and clean data folders"
-echo "================================================================================"
-echo ""
-bash scripts/00_archive_and_clean.sh
-echo ""
+if [[ "$SKIP_CLEAN" == "true" ]]; then
+    echo "Skipping step 0 (--skip-clean)."
+    echo ""
+else
+    TOTAL_STEPS_LABEL=$(( ${#STEPS[@]} + 1 ))
+    echo "================================================================================"
+    echo "Step 0: Archive previous run and clean data folders"
+    echo "================================================================================"
+    echo ""
+
+    CLEAN_ARGS=""
+    [[ -n "$ARCHIVE_FLAG" ]] && CLEAN_ARGS="$ARCHIVE_FLAG"
+    [[ -z "$ARCHIVE_FLAG" ]] && CLEAN_ARGS="--keep-N $KEEP_N"
+
+    bash scripts/00_archive_and_clean.sh $CLEAN_ARGS
+    echo ""
+fi
 
 # ==============================================================================
 # Run Pipeline Steps
@@ -108,7 +148,7 @@ if [[ "$INCLUDE_GENES" == "true" ]]; then
         "07_run_solote.sh|Run soloTE quantification"
         "08_validate_results.R|Validate against ground truth (+ gene bleed check)"
     )
-    echo "Gene simulation enabled (include_genes: true)"
+        echo "Gene simulation: ENABLED"
 else
     STEPS=(
         "01_select_te_loci.R|Select TE loci from RepeatMasker"
@@ -120,8 +160,10 @@ else
         "07_run_solote.sh|Run soloTE quantification"
         "08_validate_results.R|Validate against ground truth"
     )
-    echo "Gene simulation disabled (include_genes: false)"
+    echo "Gene simulation: disabled"
 fi
+echo "Pipeline steps: ${#STEPS[@]} (+ step 0 cleanup)"
+echo ""
 
 TOTAL_STEPS=${#STEPS[@]}
 CURRENT_STEP=0
