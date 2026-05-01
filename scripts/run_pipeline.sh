@@ -92,16 +92,36 @@ echo ""
 # ==============================================================================
 # Run Pipeline Steps
 # ==============================================================================
-STEPS=(
-    "01_select_te_loci.R|Select TE loci from RepeatMasker"
-    "02_extract_sequences.sh|Extract TE sequences from genome"
-    "03_create_expression_profile.R|Create expression profile"
-    "04_simulate_reads.py|Simulate 3' scRNA-seq reads"
-    "05_add_barcodes.py|Add 10x cell barcodes and UMIs"
-    "06_align_starsolo.sh|Align reads with STARsolo"
-    "07_run_solote.sh|Run soloTE quantification"
-    "08_validate_results.R|Validate against ground truth"
-)
+INCLUDE_GENES=$(grep "include_genes:" config.yaml | awk '{print $2}')
+
+if [[ "$INCLUDE_GENES" == "true" ]]; then
+    STEPS=(
+        "01_select_te_loci.R|Select TE loci from RepeatMasker"
+        "01g_select_genes.R|Select housekeeping genes from GFF3"
+        "02_extract_sequences.sh|Extract TE sequences from genome"
+        "02g_extract_gene_sequences.sh|Extract gene sequences from genome"
+        "03_merge_transcriptomes.sh|Merge TE and gene transcriptomes"
+        "03_create_expression_profile.R|Create expression profile (TEs + genes)"
+        "04_simulate_reads.py|Simulate 3' scRNA-seq reads (TEs + genes)"
+        "05_add_barcodes.py|Add 10x cell barcodes and UMIs"
+        "06_align_starsolo.sh|Align reads with STARsolo"
+        "07_run_solote.sh|Run soloTE quantification"
+        "08_validate_results.R|Validate against ground truth (+ gene bleed check)"
+    )
+    echo "Gene simulation enabled (include_genes: true)"
+else
+    STEPS=(
+        "01_select_te_loci.R|Select TE loci from RepeatMasker"
+        "02_extract_sequences.sh|Extract TE sequences from genome"
+        "03_create_expression_profile.R|Create expression profile"
+        "04_simulate_reads.py|Simulate 3' scRNA-seq reads"
+        "05_add_barcodes.py|Add 10x cell barcodes and UMIs"
+        "06_align_starsolo.sh|Align reads with STARsolo"
+        "07_run_solote.sh|Run soloTE quantification"
+        "08_validate_results.R|Validate against ground truth"
+    )
+    echo "Gene simulation disabled (include_genes: false)"
+fi
 
 TOTAL_STEPS=${#STEPS[@]}
 CURRENT_STEP=0

@@ -34,6 +34,8 @@ n_te_loci        <- config$simulation$n_te_loci
 umi_per_locus    <- config$simulation$umi_per_locus
 random_seed      <- config$simulation$random_seed
 expression_model <- config$extensions$expression_model
+include_genes    <- isTRUE(config$extensions$include_genes)
+umi_per_gene     <- if (include_genes) config$extensions$gene_selection$umi_per_gene else 0L
 
 # Derived quantities (informational)
 reads_per_locus_per_cell <- reads_per_cell / n_te_loci
@@ -42,11 +44,13 @@ pcr_duplication_rate     <- reads_per_locus_per_cell / umi_per_locus
 message("Configuration:")
 message(sprintf("  Number of cells: %d", n_cells))
 message(sprintf("  TE loci: %d", n_te_loci))
-message(sprintf("  Reads per cell: %d", reads_per_cell))
-message(sprintf("  UMIs per locus per cell: %d  (expression level)", umi_per_locus))
+message(sprintf("  Reads per cell (TE only): %d", reads_per_cell))
+message(sprintf("  UMIs per TE locus per cell: %d", umi_per_locus))
 message(sprintf("  Reads per locus per cell: %.0f  (derived: reads_per_cell / n_te_loci)", reads_per_locus_per_cell))
 message(sprintf("  PCR duplication rate: %.1fx  (derived: reads_per_locus / umi_per_locus)", pcr_duplication_rate))
 message(sprintf("  Expression model: %s", expression_model))
+message(sprintf("  Include genes: %s", include_genes))
+if (include_genes) message(sprintf("  UMIs per gene per cell: %d", umi_per_gene))
 message(sprintf("  Random seed: %d", random_seed))
 message("")
 
@@ -133,7 +137,7 @@ message("")
 message("Formatting expression profile...")
 
 # Convert matrix to long format
-expr_profile <- as_tibble(expr_matrix, rownames = "locus_id") %>%
+te_profile <- as_tibble(expr_matrix, rownames = "locus_id") %>%
   pivot_longer(-locus_id, names_to = "cell_id", values_to = "target_umis") %>%
   left_join(
     tibble(cell_id = cell_ids, cell_barcode = cell_barcodes),
@@ -143,8 +147,40 @@ expr_profile <- as_tibble(expr_matrix, rownames = "locus_id") %>%
     ground_truth %>% select(locus_id, locus_name, te_family, te_class),
     by = "locus_id"
   ) %>%
-  select(cell_id, cell_barcode, locus_id, locus_name, 
-         te_family, te_class, target_umis)
+  mutate(feature_type = "te") %>%
+  select(cell_id, cell_barcode, locus_id, locus_name,
+         te_family, te_class, feature_type, target_umis)
+
+# Optionally append gene rows
+if (include_genes) {
+  gene_gt_file <- "ground_truth/selected_gene_loci.tsv"
+  if (!file.exists(gene_gt_file)) {
+    stop(sprintf(
+      "ERROR: %s not found. Run: Rscript scripts/01g_select_genes.R", gene_gt_file
+    ))
+  }
+  gene_gt <- read_tsv(gene_gt_file, show_col_types = FALSE)
+  message(sprintf("  Loaded %d gene loci from %s", nrow(gene_gt), gene_gt_file))
+
+  gene_profile <- cross_join(
+    gene_gt %>% select(locus_id, locus_name, gene_name),
+    tibble(cell_id = cell_ids, cell_barcode = cell_barcodes)
+  ) %>%
+    mutate(
+      te_family    = gene_name,
+      te_class     = "gene",
+      feature_type = "gene",
+      target_umis  = umi_per_gene
+    ) %>%
+    select(cell_id, cell_barcode, locus_id, locus_name,
+           te_family, te_class, feature_type, target_umis)
+
+  expr_profile <- bind_rows(te_profile, gene_profile)
+  message(sprintf("  Combined profile: %d TE rows + %d gene rows",
+                  nrow(te_profile), nrow(gene_profile)))
+} else {
+  expr_profile <- te_profile
+}
 
 message(sprintf("  Expression profile: %s entries", format(nrow(expr_profile), big.mark=",")))
 message("")
@@ -154,13 +190,22 @@ message("")
 # ==============================================================================
 message("Expression profile summary:")
 message("")
-message("  Per cell:")
+message("  Per cell (all features):")
 total_umis_per_cell <- expr_profile %>%
   group_by(cell_id) %>%
   summarize(total_umis = sum(target_umis), .groups = "drop")
 
-message(sprintf("    Total UMIs per cell: %d (all cells identical in uniform model)", 
-                unique(total_umis_per_cell$total_umis)))
+message(sprintf("    Total UMIs per cell: %d", unique(total_umis_per_cell$total_umis)))
+if (include_genes) {
+  te_per_cell   <- n_te_loci  * umi_per_locus
+  gene_per_cell <- nrow(gene_gt) * umi_per_gene
+  message(sprintf("      TE reads:   %d (%d loci × %d UMIs)",
+                  te_per_cell, n_te_loci, umi_per_locus))
+  message(sprintf("      Gene reads: %d (%d genes × %d UMIs)",
+                  gene_per_cell, nrow(gene_gt), umi_per_gene))
+  message(sprintf("      Gene fraction: %.1f%%",
+                  100 * gene_per_cell / (te_per_cell + gene_per_cell)))
+}
 message("")
 
 message("  Per TE locus:")
@@ -201,8 +246,13 @@ cat("====================================\n\n")
 cat(sprintf("Number of cells: %d\n", n_cells))
 cat(sprintf("Number of TE loci: %d\n", n_loci))
 cat(sprintf("Expression model: %s\n", expression_model))
-cat(sprintf("UMIs per locus per cell: %d\n", umi_per_locus))
-cat(sprintf("Total UMIs per cell: %d\n", unique(total_umis_per_cell$total_umis)))
+cat(sprintf("UMIs per TE locus per cell: %d\n", umi_per_locus))
+cat(sprintf("Include genes: %s\n", include_genes))
+if (include_genes) {
+  cat(sprintf("Number of genes: %d\n", nrow(gene_gt)))
+  cat(sprintf("UMIs per gene per cell: %d\n", umi_per_gene))
+}
+cat(sprintf("Total UMIs per cell (all features): %d\n", unique(total_umis_per_cell$total_umis)))
 cat(sprintf("Total UMIs across all cells: %d\n", sum(expr_profile$target_umis)))
 cat("\n")
 cat("TE families represented:\n")

@@ -321,6 +321,68 @@ if (overall_pass) {
 message("")
 
 # ==============================================================================
+# Gene Bleed-Through Check (only when include_genes = true)
+# ==============================================================================
+include_genes <- isTRUE(config$extensions$include_genes)
+gene_bleed_pass <- TRUE
+n_gene_bleed <- 0L
+
+if (include_genes) {
+  message("── Gene Bleed-Through Check ──────────────────────────────────────────────────")
+  message("")
+
+  gene_gt_file <- "ground_truth/selected_gene_loci.tsv"
+  if (!file.exists(gene_gt_file)) {
+    message("  WARNING: selected_gene_loci.tsv not found — skipping bleed check")
+  } else {
+    gene_gt <- read_tsv(gene_gt_file, show_col_types = FALSE)
+
+    # soloTE locus names contain genomic coordinates.
+    # Gene loci have GENE_xxx IDs; they should NOT appear in the soloTE TE output.
+    # We detect bleed by checking whether any detected locus overlaps a gene coordinate
+    # or carries a GENE_ prefix (if read names propagate to TE assignments).
+    # Pragmatic check: look for gene locus names in the soloTE feature names.
+    gene_locus_ids <- gene_gt$locus_id   # e.g., GENE_001
+
+    if (exists("obs_matrix")) {
+      detected_features <- rownames(obs_matrix)
+      # soloTE names loci as "TE_name:chr:start:end:strand"
+      # A gene bleed would show up as a TE locus whose coordinate overlaps a gene body.
+      # Simple string check: any detected feature containing a gene locus ID prefix
+      bleed_features <- detected_features[
+        sapply(detected_features, function(f)
+          any(startsWith(f, gene_locus_ids)))
+      ]
+      n_gene_bleed <- length(bleed_features)
+    }
+
+    # Count fraction of TE matrix UMIs that came from gene-derived reads.
+    # We can infer this from total_matrix_counts vs expected TE counts.
+    expected_te_counts <- n_ground_truth * config$simulation$n_cells * config$simulation$umi_per_locus
+    unexpected_counts  <- max(0L, total_matrix_counts - expected_te_counts)
+    bleed_pct <- if (total_matrix_counts > 0) unexpected_counts / total_matrix_counts * 100 else 0
+
+    message(sprintf("  Gene loci selected:          %d", nrow(gene_gt)))
+    message(sprintf("  Expected TE UMIs (ground truth): %s", format(expected_te_counts, big.mark=",")))
+    message(sprintf("  Total TE matrix UMIs (soloTE):   %s", format(total_matrix_counts, big.mark=",")))
+    message(sprintf("  Excess UMIs (possible gene bleed): %s (%.1f%% of TE matrix)",
+                    format(unexpected_counts, big.mark=","), bleed_pct))
+    message(sprintf("  Features with gene-ID prefix:    %d", n_gene_bleed))
+
+    # Pass if bleed < 5% of total TE counts
+    gene_bleed_pass <- bleed_pct < 5.0
+    if (gene_bleed_pass) {
+      message("  ✓ Gene bleed-through within acceptable range (< 5%)")
+    } else {
+      message("  ✗ Gene bleed-through exceeds 5% — soloTE may be mis-assigning gene reads to TE loci")
+    }
+    message("")
+
+    overall_pass <- overall_pass && gene_bleed_pass
+  }
+}
+
+# ==============================================================================
 # Save Results
 # ==============================================================================
 output_dir <- "validation_report"
@@ -333,13 +395,15 @@ metrics <- tibble(
              "n_ground_truth", "n_detected", "n_matched_gt",
              "gt_umi_counts", "total_umi_counts",
              "n_other_features", "n_false_negative",
-             "pass_precision", "pass_recall", "pass_correlation", "overall_pass"),
+             "pass_precision", "pass_recall", "pass_correlation",
+             "gene_bleed_pass", "overall_pass"),
   value = c(precision, recall, f1_score,
             pearson_r, spearman_r, mae, mpe,
             n_ground_truth, n_detected, n_true_positive,
             gt_counts, total_matrix_counts,
             n_false_positive, n_false_negative,
-            pass_precision, pass_recall, pass_correlation, overall_pass)
+            pass_precision, pass_recall, pass_correlation,
+            gene_bleed_pass, overall_pass)
 )
 
 write_tsv(metrics, file.path(output_dir, "validation_metrics.tsv"))

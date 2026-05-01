@@ -166,15 +166,20 @@ validation:
 #    - Set dropout_rate, expression_distribution
 # ==============================================================================
 extensions:
-  include_genes: false              # Add housekeeping genes
+  include_genes: true               # Add housekeeping genes alongside TE reads
   include_multimappers: false       # Include highly similar TEs
   expression_model: uniform         # 'uniform' or 'variable'
-  
-  # Uncomment for future gene contamination testing:
-  # gene_selection:
-  #   n_genes: 5
-  #   genes: [GAPDH, ACTB, MALAT1, RPL13A, PTMA]
-  
+
+  gene_selection:
+    n_genes: 5
+    genes: [GAPDH, ACTB, MALAT1, RPL13A, PTMA]
+    # UMIs per gene per cell. Housekeeping genes are ~50-200× more expressed
+    # than individual TE loci in a typical scRNA-seq experiment.
+    umi_per_gene: 50
+    # Poly-A tail appended to each extracted gene sequence (bp).
+    # Keeps gene sequences capturable by oligo-dT, same as TEs.
+    poly_a_length: 50
+
   # Uncomment for future expression heterogeneity:
   # variable_expression:
   #   dropout_rate: 0.1
