@@ -9,7 +9,10 @@ references:
   genome_fasta: references/genome/T2T-CHM13v2.0.fa
   genome_fai: references/genome/T2T-CHM13v2.0.fa.fai
   repeatmasker_bed: references/annotations/T2T-CHM13v2.0_RepeatMasker_SoloTE_filtered.bed
-  gene_gtf: references/annotations/T2T-CHM13v2.0_RefSeq_Curated_20231005.gff3
+  # RefSeq gene models in T2T-CHM13v2.0 coordinates.
+  # "Liftoff" = the annotation tool that transferred hg38 RefSeq → CHM13 space.
+  # Coordinates are CHM13, not hg38 — no liftover needed.
+  gene_gtf: references/annotations/chm13v2.0_RefSeq_Liftoff_v5.1.gff3
   star_index: references/STARsolo_index/
   
 # Software paths (populated by setup scripts)

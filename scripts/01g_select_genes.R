@@ -52,26 +52,27 @@ gff <- read_tsv(
 
 message(sprintf("  Total GFF3 records: %s", format(nrow(gff), big.mark = ",")))
 
-# Keep only mRNA features (one record per transcript)
-mrna <- gff %>% filter(feature == "mRNA")
-message(sprintf("  mRNA records: %s", format(nrow(mrna), big.mark = ",")))
+# This GFF3 (Liftoff v5.1) uses "transcript" as the feature type
+# and "gene_name" as the attribute key for the gene symbol.
+tx <- gff %>% filter(feature == "transcript")
+message(sprintf("  Transcript records: %s", format(nrow(tx), big.mark = ",")))
 
-# Extract gene name from attributes
-# GFF3 attributes look like: ID=rna-NM_001234.5;Parent=gene-GAPDH;Name=GAPDH;...
 extract_attr <- function(attrs, key) {
   pattern <- sprintf("(?:^|;)%s=([^;]+)", key)
   m <- regmatches(attrs, regexpr(pattern, attrs, perl = TRUE))
   ifelse(length(m) == 0, NA_character_,
-         sub(sprintf("%s=", key), "", sub("^;", "", m)))
+         sub(sprintf("^;?%s=", key), "", m))
 }
 
-mrna <- mrna %>%
+tx <- tx %>%
   mutate(
-    gene_name  = map_chr(attributes, ~extract_attr(.x, "gene")),
+    gene_name  = map_chr(attributes, ~extract_attr(.x, "gene_name")),
     tx_id      = map_chr(attributes, ~extract_attr(.x, "ID")),
     tx_length  = end - start + 1L,
     chrom      = seqname
   )
+
+mrna <- tx  # alias so rest of script is unchanged
 
 # Filter for target genes on standard chromosomes
 std_chroms <- paste0("chr", c(1:22, "X"))
