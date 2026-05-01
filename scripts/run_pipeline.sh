@@ -109,28 +109,7 @@ echo "✓ Setup complete, ready to run pipeline"
 echo ""
 
 # ==============================================================================
-# Step 0: Archive previous run and clean data folders
-# ==============================================================================
-if [[ "$SKIP_CLEAN" == "true" ]]; then
-    echo "Skipping step 0 (--skip-clean)."
-    echo ""
-else
-    TOTAL_STEPS_LABEL=$(( ${#STEPS[@]} + 1 ))
-    echo "================================================================================"
-    echo "Step 0: Archive previous run and clean data folders"
-    echo "================================================================================"
-    echo ""
-
-    CLEAN_ARGS=""
-    [[ -n "$ARCHIVE_FLAG" ]] && CLEAN_ARGS="$ARCHIVE_FLAG"
-    [[ -z "$ARCHIVE_FLAG" ]] && CLEAN_ARGS="--keep-N $KEEP_N"
-
-    bash scripts/00_archive_and_clean.sh $CLEAN_ARGS
-    echo ""
-fi
-
-# ==============================================================================
-# Run Pipeline Steps
+# Build STEPS array (needed before step 0 for step count display)
 # ==============================================================================
 INCLUDE_GENES=$(grep "include_genes:" config.yaml | awk '{print $2}')
 
@@ -165,6 +144,29 @@ fi
 echo "Pipeline steps: ${#STEPS[@]} (+ step 0 cleanup)"
 echo ""
 
+# ==============================================================================
+# Step 0: Archive previous run and clean data folders
+# ==============================================================================
+if [[ "$SKIP_CLEAN" == "true" ]]; then
+    echo "Skipping step 0 (--skip-clean)."
+    echo ""
+else
+    echo "================================================================================"
+    echo "Step 0/${#STEPS[@]}: Archive previous run and clean data folders"
+    echo "================================================================================"
+    echo ""
+
+    CLEAN_ARGS=""
+    [[ -n "$ARCHIVE_FLAG" ]] && CLEAN_ARGS="$ARCHIVE_FLAG"
+    [[ -z "$ARCHIVE_FLAG" ]] && CLEAN_ARGS="--keep-N $KEEP_N"
+
+    bash scripts/00_archive_and_clean.sh $CLEAN_ARGS
+    echo ""
+fi
+
+# ==============================================================================
+# Run Pipeline Steps
+# ==============================================================================
 TOTAL_STEPS=${#STEPS[@]}
 CURRENT_STEP=0
 
